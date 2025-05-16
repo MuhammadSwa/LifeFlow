@@ -26,6 +26,12 @@ importers:
       tailwindcss:
         specifier: ^4.1.7
         version: 4.1.7
+      textarea-caret-position:
+        specifier: ^0.1.1
+        version: 0.1.1
+      textarea-caret-ts:
+        specifier: ^4.1.1
+        version: 4.1.1
     devDependencies:
       '@tauri-apps/cli':
         specifier: ^2
@@ -843,6 +849,12 @@ packages:
     resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
     engines: {node: '>=18'}
 
+  textarea-caret-position@0.1.1:
+    resolution: {integrity: sha512-Dns++qU6E9eh/IweI8fiFrkARbKUfuUoSSbf9mwJaSziJ5DBGkM2SJ0tKjLotqhj58vfh0bBQDPPmi1AgDS+lg==}
+
+  textarea-caret-ts@4.1.1:
+    resolution: {integrity: sha512-kEL3aQ99r8jJR2RfB6g74LEzrt9NTXkyjPvvP3vzhNkQ+zAaXitKCq8BUEueepULWCCxtpRaRjtnYHaR45FDMg==}
+
   tinyglobby@0.2.13:
     resolution: {integrity: sha512-mEwzpUgrLySlveBwEVDMKk5B57bhLPYovRfPAXD5gA/98Opn0rCDj3GtLwFvCvH5RK9uPCExUROW5NjDwvqkxw==}
     engines: {node: '>=12.0.0'}
@@ -1595,6 +1607,10 @@ snapshots:
       minizlib: 3.0.2
       mkdirp: 3.0.1
       yallist: 5.0.0
+
+  textarea-caret-position@0.1.1: {}
+
+  textarea-caret-ts@4.1.1: {}
 
   tinyglobby@0.2.13:
     dependencies:
