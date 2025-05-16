@@ -14,7 +14,7 @@ const PRIORITIES = ['A', 'B', 'C', 'D'];
 
 // --- Helper Functions ---
 // get the relative position of the cursor in the input
-const getCharRectInInput = (inputRef: HTMLInputElement | undefined): { top: number; left: number } | null => {
+const getCharRectInInput = (inputRef: HTMLTextAreaElement | undefined): { top: number; left: number } | null => {
   if (!inputRef) return null;
   const coordinates = Caret.getRelativePosition(inputRef);
   return coordinates.top && coordinates.left ? coordinates : null;
@@ -51,7 +51,7 @@ const TodoInput = () => {
     // Function to get suggestion items
     getItems: (currentWord: string) => string[];
     // Function to calculate the position for the suggestion popup
-    getPopupPosition: (cursorPos: number, currentWord: string) => { top: number; left: number } | null;
+    getPopupPosition: () => { top: number; left: number } | null;
     // Optional: Action to take when this suggestion type is selected but doesn't directly insert text (e.g., open date picker)
     onSelectAction?: (currentText: string, cursorPos: number, selectedItem: string) => void;
   }
@@ -61,40 +61,40 @@ const TodoInput = () => {
   const suggestionConfigs: Record<Exclude<SuggestionMode, null>, SuggestionConfig> = {
     priority: {
       triggerPattern: '(',
-      condition: (charBeforeCursor, currentWord, existingTodo) =>
+      condition: (charBeforeCursor, _, existingTodo) =>
         charBeforeCursor === '(' && !existingTodo.priority,
       getItems: () => PRIORITIES.map(p => `(${p})`),
-      getPopupPosition: (cursorPos) => getCharRectInInput(inputRef),
+      getPopupPosition: () => getCharRectInInput(inputRef),
     },
     context: {
       triggerPattern: '@',
-      condition: (charBeforeCursor, currentWord, existingTodo) =>
+      condition: (_, currentWord, existingTodo) =>
         currentWord.startsWith('@') && existingTodo.contexts.length === 0, // Allow multiple later if needed
       getItems: (currentWord) => {
         const query = currentWord.substring(1).toLowerCase();
         return availableContexts().filter(c => c.toLowerCase().startsWith(query));
       },
-      getPopupPosition: (cursorPos, currentWord) => getCharRectInInput(inputRef),
+      getPopupPosition: () => getCharRectInInput(inputRef),
     },
     project: {
       triggerPattern: '+',
-      condition: (charBeforeCursor, currentWord, existingTodo) =>
+      condition: (_, currentWord, existingTodo) =>
         currentWord.startsWith('+') && existingTodo.projects.length === 0, // Allow multiple later if needed
       getItems: (currentWord) => {
         const query = currentWord.substring(1).toLowerCase();
         return availableProjects().filter(p => p.toLowerCase().startsWith(query));
       },
-      getPopupPosition: (cursorPos, currentWord) => getCharRectInInput(inputRef),
+      getPopupPosition: () => getCharRectInInput(inputRef),
     },
     date_keyword: {
       triggerPattern: 'due:',
-      condition: (charBeforeCursor, currentWord, existingTodo) => {
+      condition: (_, currentWord, existingTodo) => {
         const potentialKeyword = currentWord.toLowerCase();
         return "due:".startsWith(potentialKeyword) && potentialKeyword.length > 0 && !existingTodo.metadata.due;
       },
       getItems: () => ['due:YYYY-MM-DD'], // This is more of a placeholder to trigger the mode
-      getPopupPosition: (cursorPos, currentWord) => getCharRectInInput(inputRef),
-      onSelectAction: (currentText, cursorPos, selectedItem) => {
+      getPopupPosition: () => getCharRectInInput(inputRef),
+      onSelectAction: (currentText, cursorPos, _) => {
         // Replace the typed keyword (e.g., "d", "du") with "due:"
         const wordStartMatch = currentText.substring(0, cursorPos).match(/\S+$/);
         if (wordStartMatch && wordStartMatch.index !== undefined && inputRef) {
@@ -140,7 +140,7 @@ const TodoInput = () => {
           setSuggestionMode(mode);
           setSuggestionItems(items);
           setShowSuggestions(true);
-          setPopupPosition(config.getPopupPosition(cursorPos, currentWord));
+          setPopupPosition(config.getPopupPosition());
           setHighlightedSuggestionIndex(0); // Reset highlight
           return; // Found a mode, exit
         }
@@ -322,7 +322,6 @@ const TodoInput = () => {
     <div class="relative">
       <textarea
         ref={inputRef}
-        type="text"
         placeholder="Type ( for priority, @ for context, + for project, 'due:' for due date..."
         value={inputValue()}
         class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-16" // Added pr-16 for Add button
