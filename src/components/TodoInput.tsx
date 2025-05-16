@@ -1,4 +1,4 @@
-import { createSignal, } from "solid-js";
+import { createSignal, onMount, } from "solid-js";
 import { addTodo, availableContexts, availableProjects } from "../stores/todoStore";
 import SuggestionDropdown from "./SuggestionDropdown";
 import { parseTodoTxtLine } from "../parsers/todoTxtParser";
@@ -14,6 +14,7 @@ const PRIORITIES = ['A', 'B', 'C', 'D'];
 
 // --- Helper Functions ---
 // get the relative position of the cursor in the input
+// NOTE: this works okay, but maybe use popper.js?
 const getCharRectInInput = (inputRef: HTMLTextAreaElement | undefined): { top: number; left: number } | null => {
   if (!inputRef) return null;
   const coordinates = Caret.getRelativePosition(inputRef);
@@ -27,6 +28,11 @@ const TodoInput = () => {
   // --- State Signals ---
   const [inputValue, setInputValue] = createSignal('');
   let inputRef: HTMLTextAreaElement | undefined; // Ref for the input element
+
+
+  onMount(() => {
+    inputRef?.focus();
+  })
 
   // Suggestion Dropdown State
   const [showSuggestions, setShowSuggestions] = createSignal(false);

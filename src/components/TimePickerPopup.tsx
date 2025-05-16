@@ -1,28 +1,34 @@
-import { createSignal, onMount, onCleanup, Accessor, Setter, createEffect } from 'solid-js';
+import { createSignal, onMount, onCleanup, Accessor, Setter, JSX, createEffect } from 'solid-js';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
-import { JSX } from 'solid-js/h/jsx-runtime';
+import { formatDate } from '../utils/date';
 
 interface TimePickerPopupProps {
   show: Accessor<boolean>;
   setShow: Setter<boolean>;
   onSelectDate: (date: string) => void; // YYYY-MM-DD
-  inputRef: HTMLInputElement;
+  inputRef: HTMLTextAreaElement;
   triggerCharPosition?: Accessor<{ top: number; left: number } | null>;
 }
 
 
 const TimePickerPopup = (props: TimePickerPopupProps) => {
   const [selectedDate, setSelectedDate] = createSignal(new Date());
-  const [timePickerInstance, setTimePickerInstance] = createSignal(null);
-  let inputRef: HTMLInputElement;
+  const [timePickerInstance, setTimePickerInstance] = createSignal<flatpickr.Instance | null>(null);
+  let inputRef: HTMLInputElement | undefined;
+
+  createEffect(() => {
+    if (props.show()) {
+      inputRef?.focus();
+    }
+  })
 
 
-  const handleDateSelect = (e: Event) => {
-    console.log("Selected date:", selectedDate());
+  const handleDateSelect = () => {
     if (selectedDate) {
+      // const formattedDate = selectedDate.toISOString().split('T')[0];
       // TODO: change format
-      props.onSelectDate(selectedDate().toISOString());
+      props.onSelectDate(formatDate(selectedDate()));
       props.setShow(false);
     }
   };
@@ -65,11 +71,12 @@ const TimePickerPopup = (props: TimePickerPopupProps) => {
     thirtyDaysLater.setDate(today.getDate() + 30);
 
     // Initialize flatpickr
-    const fpInstance = flatpickr(inputRef, {
+    const fpInstance = flatpickr(inputRef!, {
       enableTime: true,
       dateFormat: "Y-m-d H:i",
       defaultDate: today,
       minDate: today,
+      allowInput: true,
       inline: true, // This makes the calendar always visible
       static: true, // Positions the calendar better when inline
       onChange: (selectedDates) => {
@@ -85,7 +92,7 @@ const TimePickerPopup = (props: TimePickerPopupProps) => {
   // Handle key down events (for Enter key)
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Enter') {
-      handleDateSelect(event);
+      handleDateSelect();
     }
   };
 
@@ -100,32 +107,24 @@ const TimePickerPopup = (props: TimePickerPopupProps) => {
 
   return (
     <div style={style()}>
-      {props.show && (
-        <div class="w-full max-w-md mx-auto p-4" onkeydown={handleKeyDown} tabindex="0" ref={inputRef}>
-          <div class="mb-4">
-            <input
-              ref={inputRef}
-              id="datetime-picker"
-              type="hidden" // Changed from "text" to "hidden" since we don't need to interact with it
-              class="w-full"
+      <div class="w-full max-w-md mx-auto p-4" onkeydown={handleKeyDown} tabindex="0">
+        <div class="mb-4">
+          <input
+            ref={inputRef}
+            id="datetime-picker"
+            type="hidden" // Changed from "text" to "hidden" since we don't need to interact with it
+            class="w-full"
 
-            />
-          </div>
-
-          <button
-            onClick={(e) => handleDateSelect(e)}
-            class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Confirm Selection
-          </button>
-
-          <div class="mt-4">
-            <p class="text-sm text-gray-600">
-              Selected: {selectedDate() ? selectedDate().toLocaleString() : 'None'}
-            </p>
-          </div>
+          />
         </div>
-      )}
+
+        <button
+          onClick={handleDateSelect}
+          class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          Confirm Selection
+        </button>
+      </div>
     </div>
 
   );
