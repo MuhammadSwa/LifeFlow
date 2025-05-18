@@ -1,0 +1,26 @@
+// push-server/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2022", // Or newer, align with your Node.js version
+    "module": "ESNext", // For native ES Modules
+    "moduleResolution": "bundler", // Or "node16"/"nodenext"
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "./dist", // Output directory for compiled JavaScript
+    "rootDir": "./", // Source directory
+    "resolveJsonModule": true, // If you import JSON files
+    "sourceMap": true // Useful for debugging
+    // "baseUrl": ".", // Optional: if you use path aliases
+    // "paths": { ... } // Optional: path aliases
+  },
+  "include": [
+    "server.ts",
+    "**/*.ts"
+  ], // Files to include in compilation
+  "exclude": [
+    "node_modules",
+    "dist"
+  ] // Files to exclude
+}

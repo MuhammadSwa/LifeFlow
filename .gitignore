@@ -1,4 +1,5 @@
 node_modules
+push-server/node_modules
 dist
 todos.md
 migration.sql

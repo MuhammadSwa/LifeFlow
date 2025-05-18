@@ -1,13 +1,13 @@
 // src/mutators.ts
 import type { Transaction, CustomMutatorDefs } from '@rocicorp/zero';
 import { nanoid } from 'nanoid';
-import type { Schema, Todo, Project, Area } from './schema'; // Assuming these types are exported from schema.ts
+import type { Schema, Todo, Project, Area } from './schema.ts'; // Assuming these types are exported from schema.ts
 
 // This would be your actual authentication data type if you implement auth
-// For now, we can just use a placeholder or not pass it if mutators don't need user area yet.
+// For now, we can just use a placeholder or not pass it if mutators don't need user context yet.
 type AuthData = { userID: string } | undefined; // Example: Could be an object with userID or undefined if anonymous
 
-// Helper to create/get project or area ID
+// Helper to create/get project or context ID
 async function getOrCreateLookupId(
   tx: Transaction<Schema>,
   type: 'project' | 'area',
@@ -17,19 +17,10 @@ async function getOrCreateLookupId(
   if (existingId) return existingId; // If an ID is already provided, use it
   if (!name || !name.trim()) return null;
 
-
-  const tableName = type;
-
+  // const tableName = type === 'project' ? 'project' : 'area';
   // const existing = await tx.query[tableName].where('name', name.trim()).one();
-  let existing: Project | Area | undefined; // Be more explicit with types
-
-  if (tableName === 'project') {
-    // Explicitly access tx.query.project
-    existing = await tx.query.project.where('name', name.trim()).one();
-  } else { // tableName === 'area'
-    // Explicitly access tx.query.area
-    existing = await tx.query.area.where('name', name.trim()).one();
-  }
+  const tableName = 'project'
+  const existing = await tx.query[tableName].where('name', name.trim()).one();
 
   if (existing) {
     return existing.id;
@@ -52,9 +43,8 @@ export function createMutators(auth: AuthData) { // auth can be used for permiss
     todo: {
       /**
        * Adds a new todo.
-       * Can optionally create project/area if names are provided and they don't exist.
+       * Can optionally create project/context if names are provided and they don't exist.
        */
-      // TODO: projectId,areaId should be the primaryKey.unique
       add: async (
         tx: Transaction<Schema>,
         args: {
@@ -63,9 +53,9 @@ export function createMutators(auth: AuthData) { // auth can be used for permiss
           completed?: boolean;
           priority?: Todo['priority'];
           projectName?: string | null; // Pass name to create/find project
-          areaName?: string | null; // Pass name to create/find area
+          contextName?: string | null; // Pass name to create/find context
           projectId?: string | null;   // Or pass existing ID
-          areaId?: string | null;   // Or pass existing ID
+          contextId?: string | null;   // Or pass existing ID
           dueDate?: number | null;
           metadata?: Todo['metadata'];
         }
@@ -77,7 +67,7 @@ export function createMutators(auth: AuthData) { // auth can be used for permiss
         const now = Date.now();
 
         const finalProjectId = await getOrCreateLookupId(tx, 'project', args.projectName, args.projectId);
-        const finalAreaId = await getOrCreateLookupId(tx, 'area', args.areaName, args.areaId);
+        const finalContextId = await getOrCreateLookupId(tx, 'area', args.contextName, args.contextId);
 
         const newTodo: Todo = {
           id: nanoid(),
@@ -87,7 +77,7 @@ export function createMutators(auth: AuthData) { // auth can be used for permiss
           createdAt: now,
           priority: args.priority === undefined ? null : args.priority, // Handle undefined vs null for enum
           projectId: finalProjectId,
-          areaId: finalAreaId,
+          areaId: finalContextId,
           completionDate: args.completed ? now : null, // Set completionDate if completed on add
           dueDate: args.dueDate === undefined ? null : args.dueDate,
           metadata: args.metadata === undefined ? null : args.metadata,
@@ -111,7 +101,7 @@ export function createMutators(auth: AuthData) { // auth can be used for permiss
           projectName?: string | null;
           areaName?: string | null;
           projectId?: string | null | 'REMOVE_PROJECT';
-          areaId?: string | null | 'REMOVE_Area';
+          contextId?: string | null | 'REMOVE_CONTEXT';
           completionDate?: number | null | 'REMOVE_COMPLETION_DATE';
           dueDate?: number | null | 'REMOVE_DUE_DATE';
           metadata?: Todo['metadata'] | 'REMOVE_METADATA';
@@ -165,8 +155,8 @@ export function createMutators(auth: AuthData) { // auth can be used for permiss
         if (args.projectName !== undefined || args.projectId !== undefined) {
           await tx.mutate.todo.update({ id: args.id, projectId: args.projectId === 'REMOVE_PROJECT' ? null : await getOrCreateLookupId(tx, 'project', args.projectName, args.projectId) });
         }
-        if (args.areaName !== undefined || args.areaId !== undefined) {
-          await tx.mutate.todo.update({ id: args.id, areaId: args.areaId === 'REMOVE_Area' ? null : await getOrCreateLookupId(tx, 'area', args.areaName, args.areaId) });
+        if (args.areaName !== undefined || args.contextId !== undefined) {
+          await tx.mutate.todo.update({ id: args.id, areaId: args.contextId === 'REMOVE_CONTEXT' ? null : await getOrCreateLookupId(tx, 'area', args.areaName, args.contextId) });
         }
 
         if (Object.keys(updates).length > 0) {
@@ -242,35 +232,35 @@ export function createMutators(auth: AuthData) { // auth can be used for permiss
       },
     },
 
-    // --- area Mutators ---
-    area: {
+    // --- Context Mutators ---
+    context: {
       add: async (tx: Transaction<Schema>, { name }: { name: string }) => {
-        if (!name.trim()) throw new Error("area name cannot be empty.");
+        if (!name.trim()) throw new Error("Context name cannot be empty.");
         const existing = await tx.query.area.where('name', name.trim()).one();
-        if (existing) throw new Error(`Area "${name}" already exists.`);
+        if (existing) throw new Error(`Context "${name}" already exists.`);
 
-        const newArea: Area = { id: nanoid(), name: name.trim() };
-        await tx.mutate.area.insert(newArea);
-        // return newarea.id;
+        const newContext: Area = { id: nanoid(), name: name.trim() };
+        await tx.mutate.area.insert(newContext);
+        // return newContext.id;
       },
       update: async (tx: Transaction<Schema>, { id, name }: { id: string; name: string }) => {
-        if (!name.trim()) throw new Error("Area name cannot be empty.");
-        const area = await tx.query.area.where('id', id).one();
-        if (!area) throw new Error(`Area with id ${id} not found.`);
+        if (!name.trim()) throw new Error("Context name cannot be empty.");
+        const context = await tx.query.area.where('id', id).one();
+        if (!context) throw new Error(`Context with id ${id} not found.`);
 
-        if (name.trim().toLowerCase() !== area.name.toLowerCase()) {
+        if (name.trim().toLowerCase() !== context.name.toLowerCase()) {
           const existingWithName = await tx.query.area.where('name', name.trim()).one();
           if (existingWithName && existingWithName.id !== id) {
-            throw new Error(`Another area with name "${name}" already exists.`);
+            throw new Error(`Another context with name "${name}" already exists.`);
           }
         }
         await tx.mutate.area.update({ id, name: name.trim() });
       },
       delete: async (tx: Transaction<Schema>, { id }: { id: string }) => {
-        // Similar to projects, SQL schema has ON DELETE SET NULL for todos.areaId
-        const area = await tx.query.area.where('id', id).one();
-        if (!area) {
-          console.warn(`Attempted to delete non-existent area: ${id}`);
+        // Similar to projects, SQL schema has ON DELETE SET NULL for todos.contextId
+        const context = await tx.query.area.where('id', id).one();
+        if (!context) {
+          console.warn(`Attempted to delete non-existent context: ${id}`);
           return;
         }
         await tx.mutate.area.delete({ id });

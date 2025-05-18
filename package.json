@@ -4,11 +4,14 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "start": "vite",
-    "dev": "vite",
+    "tauri": "tauri",
+    "dev:solid": "vite",
+    "dev:zero-cache": "npx zero-cache",
+    "dev:push-server": "ts-node ./push-server/server.ts",
+    "dev": "concurrently \"npm:dev:solid\" \"npm:dev:zero-cache\" \"npm:dev:push-server\"",
+    "dev1": "concurrently \"npm:dev:solid\" \"npm:dev:zero-cache\"",
     "build": "vite build",
-    "serve": "vite preview",
-    "tauri": "tauri"
+    "serve": "vite preview"
   },
   "license": "MIT",
   "dependencies": {

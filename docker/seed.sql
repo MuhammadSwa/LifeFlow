@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS project (
 -- area Table
 CREATE TABLE IF NOT EXISTS area (
     id TEXT PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE -- Assuming context names should be unique
+    name TEXT NOT NULL UNIQUE -- Assuming area names should be unique
 );
 
 -- todo Table
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS todo (
 
 -- Indexes for foreign keys (PostgreSQL often creates them automatically for FKs, but explicit is fine)
 CREATE INDEX IF NOT EXISTS idx_todo_project_id ON todo(project_id);
-CREATE INDEX IF NOT EXISTS idx_todo_context_id ON todo(context_id);
+CREATE INDEX IF NOT EXISTS idx_todo_area_id ON todo(area_id);
 
 -- Optional: Indexes for frequently queried fields
 CREATE INDEX IF NOT EXISTS idx_todo_completed ON todo(completed);

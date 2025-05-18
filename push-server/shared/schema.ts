@@ -1,6 +1,7 @@
 // src/schema.ts
 import { table, string, boolean, number, createSchema, definePermissions, ANYONE_CAN_DO_ANYTHING, json, enumeration, relationships, } from '@rocicorp/zero';
 import { type Row } from '@rocicorp/zero'
+// Import the Row utility type from the /schema subpath
 
 
 
@@ -75,7 +76,7 @@ export type Area = Row<typeof schema.tables.area>;
 // If you want to include related data directly in your Todo type after a query
 export type TodoWithRelations = Todo & {
   project?: Project | null; // project will be ProjectRow or null if projectId is null or no match
-  area?: Area | null; // area will be Area or null if areaId is null or no match
+  context?: Area | null; // context will be ContextRow or null if contextId is null or no match
 };
 
 export const permissions = definePermissions<unknown, Schema>(schema, () => ({
