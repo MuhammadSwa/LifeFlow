@@ -94,6 +94,10 @@ const TimePickerPopup = (props: TimePickerPopupProps) => {
     if (event.key === 'Enter') {
       handleDateSelect();
     }
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      props.setShow(false);
+    }
   };
 
   onCleanup(() => {
@@ -112,8 +116,9 @@ const TimePickerPopup = (props: TimePickerPopupProps) => {
           <input
             ref={inputRef}
             id="datetime-picker"
-            type="hidden" // Changed from "text" to "hidden" since we don't need to interact with it
+            type="text"
             class="w-full"
+            onkeydown={handleKeyDown}
 
           />
         </div>

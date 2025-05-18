@@ -17,6 +17,12 @@ export interface Todo {
   metadata: Record<string, string>; // For key:value pairs like due:2024-01-01
 }
 
+// Type for creating a new Todo, id and timestamps are optional or auto-generated
+export type NewTodo = Omit<Todo, 'id' | 'created_at' | 'updated_at'> & { id?: string };
+// Type for updating an existing Todo
+export type UpdateTodo = Partial<Omit<Todo, 'id' | 'created_at' | 'updated_at'>>;
+
+
 export enum FilterType {
   ALL = 'ALL',
   ACTIVE = 'ACTIVE', // Not completed
@@ -32,3 +38,4 @@ export interface FilterOption {
   label: string;
   value?: string; // For PROJECT or CONTEXT specific filtering
 }
+

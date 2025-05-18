@@ -1,3 +1,9 @@
 onlyBuiltDependencies:
+  - '@firebase/util'
+  - '@rocicorp/zero-sqlite3'
+  - '@swc/core'
   - '@tailwindcss/oxide'
   - esbuild
+  - node
+  - protobufjs
+  - rxdb

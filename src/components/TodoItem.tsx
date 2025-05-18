@@ -1,6 +1,18 @@
+
+// const handleClickOutside = (event: MouseEvent) => {
+//   if (!editInputRef?.contains(event.target as Node)) {
+//     setEditingTodoId(null);
+//   }
+// };
+//
+// createEffect(() => {
+//   document.addEventListener('click', handleClickOutside);
+//   onCleanup(() => document.removeEventListener('click', handleClickOutside));
+//   // Instead of global click, rely on blur or Escape, or selection.
+// });
 // a single todo item
 
-import { Component, createEffect, createSignal, JSXElement, Show } from "solid-js";
+import { createEffect, createSignal, Show } from "solid-js";
 import { Todo } from "../types";
 import { deleteTodo, saveEditedTodo, setEditingTodoId, store, toggleTodo } from "../stores/todoStore";
 
@@ -9,17 +21,11 @@ interface TodoItemProps {
 }
 
 const TodoItem = (props: TodoItemProps) => {
-  const { todo } = props;
-  // const { onToggle, onDelete } = props;
-
-  const handleDeleteClick = (e: MouseEvent) => {
-    e.stopPropagation();
-    deleteTodo(todo.id);
-  };
-
   const [editText, setEditText] = createSignal(props.todo.rawText);
   let editInputRef: HTMLInputElement | undefined;
+  let todoItemRef: HTMLLIElement | undefined;
 
+  // Check if the todo is currently being edited
   const isEditing = () => store.editingTodoId === props.todo.id;
 
   const handleEdit = () => {
@@ -31,7 +37,7 @@ const TodoItem = (props: TodoItemProps) => {
     // Autofocus the input when editing starts
     if (isEditing() && editInputRef) {
       editInputRef.focus();
-      editInputRef.select(); // Optionally select all text
+      // editInputRef.select(); // Optionally select all text
     }
   });
 
@@ -44,9 +50,9 @@ const TodoItem = (props: TodoItemProps) => {
         setEditingTodoId(null); // Exit editing mode if no change
       }
     } else {
-      // Optionally delete if text becomes empty, or revert, or show error
-      // For now, let's just cancel if it's empty
+      // just cancel if it's empty
       handleCancel();
+      // if you want to delete the todo, use deleteTodo
     }
   };
 
@@ -65,6 +71,7 @@ const TodoItem = (props: TodoItemProps) => {
     }
   };
 
+
   // Helper to display parts of the todo
   const displayPriority = () => props.todo.priority ? `(${props.todo.priority}) ` : '';
   const displayCreationDate = () => props.todo.creationDate ? `${props.todo.creationDate} ` : '';
@@ -72,6 +79,7 @@ const TodoItem = (props: TodoItemProps) => {
 
   return (
     <li
+      ref={todoItemRef}
       class={`p-3 rounded-md shadow-sm flex items-start gap-3 transition-colors border
               ${props.todo.completed ? 'bg-gray-100 border-gray-200 opacity-70' : 'bg-white border-gray-300'}
               ${isEditing() ? '!border-blue-500 ring-2 ring-blue-500' : 'hover:bg-gray-50'}`}
@@ -82,6 +90,7 @@ const TodoItem = (props: TodoItemProps) => {
         fallback={
           // --- Edit Mode ---
           <div class="flex-grow flex flex-col gap-2">
+            {/* TODO: refactor TodoInput.tsx to be easily reused here */}
             <input
               ref={editInputRef}
               type="text"

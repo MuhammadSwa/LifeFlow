@@ -3,6 +3,8 @@ import './index.css';
 import { render } from 'solid-js/web';
 
 import App from './App';
+import { createZero } from '@rocicorp/zero/solid';
+import { schema } from './schema';
 
 const root = document.getElementById('root');
 
@@ -12,4 +14,15 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
   );
 }
 
-render(() => <App />, root!);
+const z = createZero({
+  userID: "anon",
+  server: 'http://localhost:4848',
+  schema,
+  kvStore: "idb",
+});
+
+// For debugging and inspection.
+(window as any)._zero = z;
+
+
+render(() => <App z={z} />, root!);

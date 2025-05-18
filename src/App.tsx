@@ -1,13 +1,36 @@
-import { type Component } from 'solid-js';
 import TodoInput from './components/TodoInput';
 import TodoList from './components/TodoList';
 import { TodoStats } from './components/TodoStats';
 import FilterControls from './components/FilterControls';
+import { Schema } from './schema';
+import { createQuery } from '@rocicorp/zero/solid'
+import { Zero } from '@rocicorp/zero';
+import { Mutators } from './mutators';
 
-const App: Component = () => {
+
+
+function App({ z }: { z: Zero<Schema, Mutators> }) {
+
+
+
+  const [todos] = createQuery(() => z.query.todo, { ttl: "forever" })
+
+  // await z.mutate.todo.insert({ raw_text: "test", description: "test", id: 'todo5' })
+  // console.log(JSON.stringify(todos(), null, 2))
+  // onMount(async () => {
+  //   await z.mutate.todo.insert({ raw_text: "test", description: "test", id: 'todo5' })
+  //   await z.mutate.todo.insert({ raw_text: "test", description: "test", id: 'todo6' })
+  //   await z.mutate.todo.insert({ raw_text: "test", description: "test", id: 'todo7' })
+  //   await z.mutate.todo.insert({ raw_text: "test", description: "test", id: 'todo8' })
+  //   console.log(JSON.stringify(todos(), null, 2))
+  //
+  //
+  // })
+
   return (
     <div class="p-4 max-w-xl mx-auto"> {/* Increased max-width a bit */}
 
+      <li>{JSON.stringify(todos(), null, 2)}</li>
       <TodoInput />
 
       <FilterControls /> {/* Add the filter controls */}
@@ -16,7 +39,7 @@ const App: Component = () => {
 
       <TodoList />
 
-      {/* <TimePickerPopup /> */}
+
     </div>
   );
 };
