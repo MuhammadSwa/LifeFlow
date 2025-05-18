@@ -4,15 +4,13 @@
 -- You might need to restart your PostgreSQL server after this if it's the first time.
 
 -- project Table
-CREATE TABLE IF NOT EXISTS project (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE -- Assuming project names should be unique
+CREATE TABLE IF NOT EXISTS project ( -- Singular name, matching table('project')
+    name TEXT PRIMARY KEY -- Name is the PK and unique
 );
 
--- area Table
-CREATE TABLE IF NOT EXISTS area (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE -- Assuming area names should be unique
+-- Areas Table
+CREATE TABLE IF NOT EXISTS area ( -- Singular name, matching table('area')
+    name TEXT PRIMARY KEY -- Name is the PK and unique
 );
 
 -- todo Table
@@ -23,8 +21,8 @@ CREATE TABLE IF NOT EXISTS todo (
     completed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at BIGINT NOT NULL, -- For JS Date.now() timestamps
 
-    project_id TEXT REFERENCES project(id) ON DELETE SET NULL ON UPDATE CASCADE, -- Foreign Key
-    area_id TEXT REFERENCES area(id) ON DELETE SET NULL ON UPDATE CASCADE, -- Foreign Key
+    project_name TEXT REFERENCES project(name) ON DELETE SET NULL ON UPDATE CASCADE,
+    area_name TEXT REFERENCES area(name) ON DELETE SET NULL ON UPDATE CASCADE,
 
     completion_date BIGINT, -- For JS Date.now() timestamps
     priority TEXT CHECK (priority IS NULL OR priority IN ('A', 'B', 'C', 'D')), -- Check constraint for priority
@@ -34,8 +32,8 @@ CREATE TABLE IF NOT EXISTS todo (
 );
 
 -- Indexes for foreign keys (PostgreSQL often creates them automatically for FKs, but explicit is fine)
-CREATE INDEX IF NOT EXISTS idx_todo_project_id ON todo(project_id);
-CREATE INDEX IF NOT EXISTS idx_todo_area_id ON todo(area_id);
+CREATE INDEX IF NOT EXISTS idx_todo_project_name ON todo(project_name);
+CREATE INDEX IF NOT EXISTS idx_todo_area_name ON todo(area_name);
 
 -- Optional: Indexes for frequently queried fields
 CREATE INDEX IF NOT EXISTS idx_todo_completed ON todo(completed);

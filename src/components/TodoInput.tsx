@@ -2,9 +2,10 @@ import { createSignal, onMount, } from "solid-js";
 import { addTodo, availableContexts, availableProjects } from "../stores/todoStore";
 import SuggestionDropdown from "./SuggestionDropdown";
 import { parseTodoTxtLine } from "../parsers/todoTxtParser";
-import { Todo } from "../types";
 import TimePickerPopup from "./TimePickerPopup";
 import { Caret } from "textarea-caret-ts";
+import { z } from "..";
+import { Todo } from "../../shared/schema";
 
 // Type for the suggestion mode
 type SuggestionMode = null | 'priority' | 'project' | 'context' | 'date_keyword';
@@ -75,7 +76,7 @@ const TodoInput = () => {
     context: {
       triggerPattern: '@',
       condition: (_, currentWord, existingTodo) =>
-        currentWord.startsWith('@') && existingTodo.contexts.length === 0, // Allow multiple later if needed
+        currentWord.startsWith('@') && existingTodo.areaName === '', // Allow multiple later if needed
       getItems: (currentWord) => {
         const query = currentWord.substring(1).toLowerCase();
         return availableContexts().filter(c => c.toLowerCase().startsWith(query));
@@ -85,7 +86,7 @@ const TodoInput = () => {
     project: {
       triggerPattern: '+',
       condition: (_, currentWord, existingTodo) =>
-        currentWord.startsWith('+') && existingTodo.projects.length === 0, // Allow multiple later if needed
+        currentWord.startsWith('+') && existingTodo.projectName === '', // Allow multiple later if needed
       getItems: (currentWord) => {
         const query = currentWord.substring(1).toLowerCase();
         return availableProjects().filter(p => p.toLowerCase().startsWith(query));
@@ -96,7 +97,7 @@ const TodoInput = () => {
       triggerPattern: 'due:',
       condition: (_, currentWord, existingTodo) => {
         const potentialKeyword = currentWord.toLowerCase();
-        return "due:".startsWith(potentialKeyword) && potentialKeyword.length > 0 && !existingTodo.metadata.due;
+        return "due:".startsWith(potentialKeyword) && potentialKeyword.length > 0 && !existingTodo.dueDate;
       },
       getItems: () => ['due:YYYY-MM-DD'], // This is more of a placeholder to trigger the mode
       getPopupPosition: () => getCharRectInInput(inputRef),
@@ -312,7 +313,7 @@ const TodoInput = () => {
   const handleSubmit = () => {
     const text = inputValue().trim();
     if (text) {
-      addTodo(text);
+      addTodo(z, text);
       setInputValue(''); // Clear input
       // Reset all popups/suggestions
       setShowSuggestions(false);

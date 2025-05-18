@@ -1,33 +1,65 @@
 import { createStore, produce } from "solid-js/store";
-import { FilterOption, FilterType, Todo } from "../types";
+import { FilterOption, FilterType } from "../types";
 import { Accessor, createEffect, createMemo } from "solid-js";
 import { formatTodoTxtItem, parseTodoTxtLine } from "../parsers/todoTxtParser";
+import { Zero } from "@rocicorp/zero";
+import { createMutators, Mutators } from "../../shared/mutators";
+import { Schema } from "../../shared/schema";
+import { createQuery, createZero } from "@rocicorp/zero/solid";
+import { Todo } from "../../shared/schema";
+import { schema } from "../../shared/schema";
+
+const serverURL = import.meta.env.VITE_PUBLIC_ZERO_SERVER || 'http://localhost:4848';
+const userID = import.meta.env.VITE_PUBLIC_USER_ID || 'anonymous_client_user'; // Or from actual auth
+
+export const z = createZero<Schema, Mutators>({
+  server: serverURL,
+  schema,
+  userID: userID, // Later, this should come from auth
+  kvStore: 'idb',
+  // Auth token if you implement JWT authentication
+  // auth: async () => { /* fetch JWT token */ return 'your_jwt_token'; },
+  mutators: createMutators(userID), // Pass userID if mutators need it for permissions
+  push: {
+    queryParams: { // Example if your push server needs extra static info per client
+      // clientID: 'some-client-identifier',
+    }
+  }
+});
 
 const LOCAL_STORAGE_KEY = 'todos';
 
 
-const loadTodos = (): Todo[] => {
-  const storedTodos = localStorage.getItem(LOCAL_STORAGE_KEY);
-  if (storedTodos) {
-    try {
-      const parsedTodos = JSON.parse(storedTodos);
-      // Basic validation: check if it's an array
-      if (Array.isArray(parsedTodos)) {
-        // return parsedTodos;
-        return parsedTodos.map(item => ({ // Ensure all fields are present, good for migrations
-          ...item,
-          projects: item.projects || [],
-          contexts: item.contexts || [],
-          metadata: item.metadata || {},
-        }));
-      }
-    } catch (e) {
-      console.error("Failed to parse todos from localStorage", e);
-      // If parsing fails, return empty array or handle error
-    }
-  }
-  return []; // Return empty array if nothing stored or parsing failed
-};
+const [loadTodos] = createQuery(() =>
+  z.query.todo // Use singular 'todo' if that's your Zero schema table name
+    .related('project') // Assumes 'project' is the relationship name in schema.ts
+    .related('area') // Assumes 'context' is the relationship name
+    .orderBy('createdAt', 'desc')
+);
+
+
+// const loadTodos = (): Todo[] => {
+//   const storedTodos = localStorage.getItem(LOCAL_STORAGE_KEY);
+//   if (storedTodos) {
+//     try {
+//       const parsedTodos = JSON.parse(storedTodos);
+//       // Basic validation: check if it's an array
+//       if (Array.isArray(parsedTodos)) {
+//         // return parsedTodos;
+//         return parsedTodos.map(item => ({ // Ensure all fields are present, good for migrations
+//           ...item,
+//           projects: item.projects || [],
+//           contexts: item.contexts || [],
+//           metadata: item.metadata || {},
+//         }));
+//       }
+//     } catch (e) {
+//       console.error("Failed to parse todos from localStorage", e);
+//       // If parsing fails, return empty array or handle error
+//     }
+//   }
+//   return []; // Return empty array if nothing stored or parsing failed
+// };
 
 interface TodoStoreState {
   todos: Todo[];
@@ -49,42 +81,87 @@ const [store, setStore] = createStore<TodoStoreState>({
 });
 
 // Actions to modify the store
-const addTodo = (text: string) => {
-  const newTodo = parseTodoTxtLine(text);
-  console.log(newTodo)
-  // const newTodo: Todo = { id: Date.now(), text, completed: false };
-  setStore('todos', (prevTodos) => [...prevTodos, newTodo]);
+// const addTodo = (text: string) => {
+//   const newTodo = parseTodoTxtLine(text);
+//   console.log(newTodo)
+//   // const newTodo: Todo = { id: Date.now(), text, completed: false };
+//   setStore('todos', (prevTodos) => [...prevTodos, newTodo]);
+// };
+
+const addTodo = async (z: Zero<Schema, Mutators>, text: string) => {
+  if (!text) return;
+
+  const { description, projectName, areaName: contextName, priority, dueDate } = parseTodoTxtLine(text);
+
+  if (!description) {
+    alert("Todo description cannot be empty after parsing metadata.");
+    return;
+  }
+
+  try {
+    await z.mutate.todo.add({
+      rawText: text,
+      description: description,
+      projectName: projectName,
+      areaName: contextName,
+      priority: priority,
+      dueDate: dueDate,
+    }).client; // Use .client to await optimistic update
+
+  } catch (e: any) {
+    console.error("Failed to add todo:", e);
+    alert(`Error adding todo: ${e.message}`);
+  }
 };
 
 
-const deleteTodo = (idToDelete: number) => {
-  setStore('todos', (prevTodos) => prevTodos.filter(todo => todo.id !== idToDelete));
+
+const deleteTodo = async (id: string) => {
+  if (confirm("Are you sure you want to delete this todo?")) {
+    try {
+      await z.mutate.todo.delete({ id }).client;
+    } catch (e: any) {
+      console.error("Failed to delete todo:", e);
+      alert(`Error deleting todo: ${e.message}`);
+    }
+  }
 };
 
-const toggleTodo = (idToToggle: number) => {
-  // setStore('todos',
-  //   (todo) => todo.id === idToToggle, // Condition to find the todo
-  //   'completed',                    // Key to update
-  //   (c) => !c,                      // Updater function for 'completed'
-  // );
-  // Alternatively, more verbose but perhaps clearer for some:
-  setStore('todos', (prevTodos) =>
-    prevTodos.map(todo =>
-      todo.id === idToToggle ? {
-        ...todo,
-        completed: !todo.completed,
-        completionDate: todo.completed ? new Date().toISOString().split('T')[0] : undefined,
-      } : todo
-    )
-  );
+
+// const toggleTodo = (idToToggle: string) => {
+//   // setStore('todos',
+//   //   (todo) => todo.id === idToToggle, // Condition to find the todo
+//   //   'completed',                    // Key to update
+//   //   (c) => !c,                      // Updater function for 'completed'
+//   // );
+//   // Alternatively, more verbose but perhaps clearer for some:
+//   setStore('todos', (prevTodos) =>
+//     prevTodos.map(todo =>
+//       todo.id === idToToggle ? {
+//         ...todo,
+//         completed: !todo.completed,
+//         completionDate: todo.completed ? Date.now() : null,
+//       } : todo
+//     )
+//   );
+// };
+
+const toggleTodo = async (id: string) => {
+  try {
+    await z.mutate.todo.toggleCompleted({ id }).client;
+  } catch (e: any) {
+    console.error("Failed to toggle todo:", e);
+    alert(`Error toggling todo: ${e.message}`);
+  }
 };
+
 
 const setEditingTodoId = (id: number | null) => {
   setStore('editingTodoId', id);
 };
 
 // This action will take the raw text from the edit input
-const saveEditedTodo = (id: number, rawUpdatedText: string) => {
+const saveEditedTodo = (id: string, rawUpdatedText: string) => {
   const updatedParsedTodo = parseTodoTxtLine(rawUpdatedText); // Re-parse the edited text
 
   setStore(
@@ -96,6 +173,7 @@ const saveEditedTodo = (id: number, rawUpdatedText: string) => {
       // or if your parser doesn't preserve it when re-parsing.
       // For todo.txt, re-parsing is generally fine.
       Object.assign(todo, updatedParsedTodo);
+      // TODO: updateTodo
       todo.rawText = formatTodoTxtItem(updatedParsedTodo); // Ensure rawText is the canonical format
     })
   );

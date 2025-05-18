@@ -1,5 +1,6 @@
 // src/parsers/todoTxtParser.ts
 
+// TODO: make due date seperate from completion date?
 import { nanoid } from "nanoid";
 import { Todo } from "../../shared/schema";
 
@@ -14,8 +15,8 @@ export function parseTodoTxtLine(line: string): Todo {
   let completionDate: number | null = null;
   let priority: 'A' | 'B' | 'C' | 'D' | null = null;
   let createdAt: number = Date.now();
-  const projects: string[] = [];
-  const contexts: string[] = [];
+  let projectName: string | null = null;
+  let areaName: string | null = null;
   const metadata: Record<string, string> = {};
 
   // Rule 1 (Completed Tasks): Check for 'x '
@@ -71,9 +72,9 @@ export function parseTodoTxtLine(line: string): Todo {
 
   for (const word of words) {
     if (word.startsWith('@') && word.length > 1) {
-      contexts.push(word.substring(1));
+      areaName = word.substring(1);
     } else if (word.startsWith('+') && word.length > 1) {
-      projects.push(word.substring(1));
+      projectName = word.substring(1);
     } else if (word.includes(':') && !word.startsWith(':') && !word.endsWith(':')) {
       const [key, ...valParts] = word.split(':');
       const value = valParts.join(':'); // Re-join if value had colons
@@ -97,9 +98,11 @@ export function parseTodoTxtLine(line: string): Todo {
     completionDate,
     priority: priority,
     createdAt,
-    projects,
-    contexts,
+    projectName,
+    areaName,
     metadata,
+    // TODO: implement it right
+    dueDate: metadata.dueDate ? Number(metadata.dueDate) : null
   };
 }
 
@@ -109,7 +112,7 @@ export function parseTodoTxtFileContent(fileContent: string): Todo[] {
     .split('\n')
     .map(line => line.trim())
     .filter(line => line.length > 0) // Ignore empty lines
-    .map((line, index) => parseTodoTxtLine(line)); // Use line number as ID
+    .map((line) => parseTodoTxtLine(line));
 }
 
 // --- Helper to format a TodoTxtItem back to a todo.txt line ---
@@ -127,17 +130,17 @@ export function formatTodoTxtItem(item: Todo): string {
     line += `(${item.priority}) `;
   }
 
-  if (item.creationDate) {
-    line += `${item.creationDate} `;
+  if (item.createdAt) {
+    line += `${item.createdAt} `;
   }
 
   line += item.description;
 
-  if (item.projects.length > 0) {
-    line += item.projects.map(p => ` +${p}`).join('');
+  if (item.projectName) {
+    line += ` +${item.projectName}`;
   }
-  if (item.contexts.length > 0) {
-    line += item.contexts.map(c => ` @${c}`).join('');
+  if (item.areaName) {
+    line += ` @${item.areaName}`;
   }
   for (const key in item.metadata) {
     line += ` ${key}:${item.metadata[key]}`;
@@ -208,3 +211,38 @@ export function formatTodoTxtItem(item: Todo): string {
 // Order matters here: completed status, completion date, priority, creation date, then description, then projects, contexts, metadata.
 //
 // The final trim().replace(/\s+/g, ' ') helps normalize spacing.
+
+
+// // --- Mutator Functions ---
+// const parseTodoInput = (raw: string): { description: string; projectName?: string; areaName?: string; priority?: Todo['priority']; dueDate?: number } => {
+//   let description = raw;
+//   let projectName: string | undefined;
+//   let areaName: string | undefined;
+//   let priority: Todo['priority'] | undefined;
+//   let dueDate: number | undefined;
+//
+//   // Basic parsing, can be made more robust
+//   const projectMatch = raw.match(/\+([\w-]+)/);
+//   if (projectMatch) {
+//     projectName = projectMatch[1];
+//     description = description.replace(projectMatch[0], '').trim();
+//   }
+//   const contextMatch = raw.match(/@([\w-]+)/);
+//   if (contextMatch) {
+//     areaName = contextMatch[1];
+//     description = description.replace(contextMatch[0], '').trim();
+//   }
+//   const priorityMatch = raw.match(/\(([A-D])\)/i);
+//   if (priorityMatch) {
+//     priority = priorityMatch[1].toUpperCase() as TodoRow['priority'];
+//     description = description.replace(priorityMatch[0], '').trim();
+//   }
+//   const dueDateMatch = raw.match(/due:(\d{4}-\d{2}-\d{2})/);
+//   if (dueDateMatch) {
+//     try {
+//       dueDate = new Date(dueDateMatch[1]).getTime();
+//       description = description.replace(dueDateMatch[0], '').trim();
+//     } catch (e) { /* ignore invalid date */ }
+//   }
+//   return { description: description.trim(), projectName, areaName: areaName, priority, dueDate };
+// };

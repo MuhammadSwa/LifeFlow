@@ -12,8 +12,8 @@ const Todo = table('todo') // Matches your SQL table name
     description: string(),
     completed: boolean(),
 
-    projectId: string().optional().from('project_id'),
-    areaId: string().optional().from('area_id'),
+    projectName: string().optional().from('project_name'),
+    areaName: string().optional().from('area_name'),
 
 
     completionDate: number().optional().from('completion_date'),
@@ -31,30 +31,28 @@ const Todo = table('todo') // Matches your SQL table name
 
 const project = table('project')
   .columns({
-    id: string(),
     name: string(),
   })
-  .primaryKey('id');
+  .primaryKey('name');
 
 const area = table('area')
   .columns({
-    id: string(),
     name: string(),
   })
-  .primaryKey('id');
+  .primaryKey('name');
 
 // --- Relationship Definitions ---
 
 const todoRelationships = relationships(Todo, ({ one }) => ({
   project: one({
     destSchema: project,
-    sourceField: ['projectId'], // Foreign key in 'todos' table
-    destField: ['id'],          // Primary key in 'projects' table
+    sourceField: ['projectName'], // Foreign key in 'todos' table
+    destField: ['name'],          // Primary key in 'projects' table
   }),
   area: one({
     destSchema: area,
-    sourceField: ['areaId'], // Foreign key in 'todos' table
-    destField: ['id'],          // Primary key in 'areas' table
+    sourceField: ['areaName'], // Foreign key in 'todos' table
+    destField: ['name'],          // Primary key in 'areas' table
   }),
 }));
 
@@ -91,8 +89,8 @@ export const permissions = definePermissions<unknown, Schema>(schema, () => ({
 //   createdAt: number;
 //   completed: boolean;
 //
-//   projectId?: string;
-//   areaId?: string;
+// projectName?: string | null; // Pass name to create/find project
+// areaName?: string | null; // Pass name to create/find area
 //
 //   completionDate?: number; // YYYY-MM-DD
 //
