@@ -1,5 +1,7 @@
 // src/parsers/todoTxtParser.ts
-import type { Todo as Todo } from '../types'; // Or '../todoTxtTypes'
+
+import { nanoid } from "nanoid";
+import { Todo } from "../../shared/schema";
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const PRIORITY_REGEX = /^\(([A-Z])\)$/;
@@ -9,9 +11,9 @@ export function parseTodoTxtLine(line: string): Todo {
   const originalLine = line; // Keep original for rawText
 
   let completed = false;
-  let completionDate: string | undefined = undefined;
-  let priority: string | undefined = undefined;
-  let creationDate: string | undefined = undefined;
+  let completionDate: number | null = null;
+  let priority: 'A' | 'B' | 'C' | 'D' | null = null;
+  let createdAt: number = Date.now();
   const projects: string[] = [];
   const contexts: string[] = [];
   const metadata: Record<string, string> = {};
@@ -24,7 +26,9 @@ export function parseTodoTxtLine(line: string): Todo {
     // Rule 2 (Completed Tasks): Completion Date
     const firstWord = remainingLine.split(' ')[0];
     if (DATE_REGEX.test(firstWord)) {
-      completionDate = firstWord;
+      // convert datestring to timestamp for postgres
+      const date = new Date(firstWord);
+      completionDate = date.getTime();
       remainingLine = remainingLine.substring(firstWord.length).trimStart();
     } else {
       // As per spec, completion date is required if 'x' is present.
@@ -40,7 +44,11 @@ export function parseTodoTxtLine(line: string): Todo {
     const firstWord = remainingLine.split(' ')[0];
     const priorityMatch = firstWord.match(PRIORITY_REGEX);
     if (priorityMatch) {
-      priority = priorityMatch[1]; // The character inside ( )
+      if (priorityMatch[1] === 'A' || priorityMatch[1] === 'B' || priorityMatch[1] === 'C' || priorityMatch[1] === 'D') {
+        priority = priorityMatch[1]
+      } else {
+        priority = null;
+      }
       remainingLine = remainingLine.substring(firstWord.length).trimStart();
     }
   }
@@ -50,7 +58,8 @@ export function parseTodoTxtLine(line: string): Todo {
   // And for completed tasks, it appears after completionDate
   const firstWordAfterPriorityOrCompletion = remainingLine.split(' ')[0];
   if (DATE_REGEX.test(firstWordAfterPriorityOrCompletion)) {
-    creationDate = firstWordAfterPriorityOrCompletion;
+    const date = new Date(firstWordAfterPriorityOrCompletion);
+    createdAt = date.getTime();
     remainingLine = remainingLine.substring(firstWordAfterPriorityOrCompletion.length).trimStart();
   }
 
@@ -81,13 +90,13 @@ export function parseTodoTxtLine(line: string): Todo {
   const description = descriptionParts.join(' ').trim();
 
   return {
-    id: new Date().getTime(), // Use provided ID or generate one
+    id: nanoid(), // Use provided ID or generate one
     rawText: originalLine,
+    description,
     completed,
     completionDate,
-    priority,
-    creationDate,
-    description,
+    priority: priority,
+    createdAt,
     projects,
     contexts,
     metadata,
