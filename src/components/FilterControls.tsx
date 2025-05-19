@@ -70,7 +70,7 @@ const FilterControls: Component = () => {
   };
 
   return (
-    <div class="mb-4 bg-white rounded-lg shadow p-3 max-w-lg w-full">
+    <div class="mb-4 bg-white rounded-lg shadow p-3 ">
       <div class="flex items-center gap-2 flex-wrap mb-3">
         <For each={filters()}>
           {(filter) => (

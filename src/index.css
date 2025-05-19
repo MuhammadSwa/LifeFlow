@@ -1,1 +1,7 @@
 @import 'tailwindcss';
+/* src/index.css or your global CSS file */
+
+/* Add this rule */
+html {
+  scroll-behavior: smooth;
+}

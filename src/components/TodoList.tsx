@@ -8,7 +8,7 @@ const TodoList: Component = () => {
   const filteredTodos = useFilteredTodos();
 
   return (
-    <div>
+    <div >
 
       <div class="text-xs text-gray-500 mb-2">
         <Show when={store.selectedProject || store.selectedArea}>
@@ -38,7 +38,10 @@ const TodoList: Component = () => {
           </For>
         </ul>
       </Show>
+
+
     </div>
+
   );
 };
 

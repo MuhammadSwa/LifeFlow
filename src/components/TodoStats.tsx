@@ -22,7 +22,7 @@ export const TodoStats: Component = () => {
 
   return (
     <Show when={allTodosCount() > 0}>
-      <div class="flex justify-between text-sm text-gray-500 mb-4 w-full max-w-lg">
+      <div class="flex justify-between text-sm text-gray-500 mb-4 ">
         <div>
           <span>{totalFilteredCount()} {isFiltered() ? 'filtered' : 'total'} item{totalFilteredCount() !== 1 ? 's' : ''}</span>
 
@@ -33,10 +33,12 @@ export const TodoStats: Component = () => {
           </Show>
         </div>
 
-        <div class="flex gap-3">
-          <span>{activeCount()} active</span>
-          <span>{completedCount()} completed</span>
-        </div>
+        <Show when={store.activeFilter.type === "ALL"}>
+          <div class="flex gap-3">
+            <span>{activeCount()} active</span>
+            <span>{completedCount()} completed</span>
+          </div>
+        </Show>
       </div>
     </Show>
   );

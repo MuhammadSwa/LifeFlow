@@ -3,11 +3,12 @@ import TodoList from './components/TodoList';
 import { TodoStats } from './components/TodoStats';
 import FilterControls from './components/FilterControls';
 import { Todo } from '../shared/schema';
-import { createSignal, For, onMount, } from 'solid-js';
+import { createSignal, For, onMount, Show, } from 'solid-js';
 // import { z } from './zero';
 import { createQuery } from '@rocicorp/zero/solid';
 import { useZero } from './ZeroContext';
 import { addTodo, loadTodos } from './stores/todoStore';
+import { FAB } from './components/FAB';
 
 
 
@@ -104,10 +105,23 @@ function App() {
 
   //
 
-  return (
-    <div class="p-4 max-w-xl mx-auto"> {/* Increased max-width a bit */}
+  let todoInputTextAreaElement: HTMLTextAreaElement | undefined;
+  const handleFabClick = () => {
+    if (todoInputTextAreaElement) {
+      todoInputTextAreaElement.focus();
+      // Optional: Scroll the input into view if it might be off-screen
+      // This is helpful if the user has scrolled down the page.
+      todoInputTextAreaElement.scrollIntoView();
+    } else {
+      console.warn("Textarea ref for TodoInput is not yet available.");
+    }
+  };
 
-      <TodoInput />
+
+  return (
+    <div class="p-4 min-h-screen max-w-2xl mx-auto pb-[88px] sm:pb-6"> {/* Increased max-width a bit */}
+
+      <TodoInput textAreaRef={el => todoInputTextAreaElement = el} />
       {/**/}
       <FilterControls />
       {/**/}
@@ -115,13 +129,14 @@ function App() {
       {/**/}
       <TodoList />
 
+      <FAB onClick={handleFabClick} />
+
 
     </div>
   );
 };
 
 export default App;
-
 
 
 
@@ -191,3 +206,4 @@ export default App;
 //     alert(`Error adding todo: ${e.message}`);
 //   }
 // };
+

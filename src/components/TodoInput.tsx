@@ -24,15 +24,29 @@ const getCharRectInInput = (inputRef: HTMLTextAreaElement | undefined): { top: n
 };
 
 
+interface TodoInputProps {
+  textAreaRef?: (element: HTMLTextAreaElement) => void; // Callback ref for the textarea
+  // ... any other props TodoInput might take
+}
+
 // --- Component Definition ---
 
-const TodoInput = () => {
+const TodoInput = (props: TodoInputProps) => {
   // --- State Signals ---
   const [inputValue, setInputValue] = createSignal('');
   // const availableProjects = useAvailableProjects()
   // const availableAreas = useAvailableAreas()
   const z = useZero()
   let inputRef: HTMLTextAreaElement | undefined; // Ref for the input element
+
+  // This function will be called by the ref attribute on the textarea.
+  // It sets the internal reference and also calls the parent's ref callback if provided.
+  const setupTextareaRef = (element: HTMLTextAreaElement) => {
+    inputRef = element; // For internal use within TodoInput
+    if (props.textAreaRef) {
+      props.textAreaRef(element); // Pass the element up to the parent
+    }
+  };
 
 
   const [availableProjects] = createQuery(() => z.query.project.orderBy('name', 'asc')); // Singular
@@ -346,7 +360,7 @@ const TodoInput = () => {
   return (
     <div class="relative">
       <textarea
-        ref={inputRef}
+        ref={setupTextareaRef}
         placeholder="Type ( for priority, @ for context, + for project, 'due:' for due date..."
         value={inputValue()}
         class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-16" // Added pr-16 for Add button
