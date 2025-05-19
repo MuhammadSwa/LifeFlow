@@ -103,10 +103,6 @@ function App() {
   // });
 
   //
-  const priorityDisplay = (priority: Todo['priority']) => {
-    if (!priority) return '';
-    return `(${priority})`;
-  }
 
   return (
     <div class="p-4 max-w-xl mx-auto"> {/* Increased max-width a bit */}
@@ -122,9 +118,9 @@ function App() {
 
       <TodoInput />
       {/**/}
-      {/* <FilterControls /> */} {/* Add the filter controls */}
+      <FilterControls />
       {/**/}
-      {/* <TodoStats /> */}
+      <TodoStats />
       {/**/}
       <TodoList />
 

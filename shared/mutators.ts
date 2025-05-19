@@ -52,6 +52,21 @@ export function createMutators(auth: AuthData) { // auth can be used for permiss
           dueDate: args.dueDate === undefined ? null : args.dueDate,
           metadata: args.metadata === undefined ? null : args.metadata,
         };
+
+        // check if project/area exists, if not, create them
+        if (args.projectName) {
+          const project = await tx.query.project.where('name', args.projectName).one();
+          if (!project) {
+            await tx.mutate.project.insert({ name: args.projectName });
+          }
+        }
+        if (args.areaName) {
+          const area = await tx.query.area.where('name', args.areaName).one();
+          if (!area) {
+            await tx.mutate.area.insert({ name: args.areaName });
+          }
+        }
+
         await tx.mutate.todo.insert(newTodo);
         console.log(`Mutator (location: ${tx.location}, user: ${auth?.userID}): Added todo: ${newTodo.id}`);
         // return newTodo.id; // Optionally return the new ID

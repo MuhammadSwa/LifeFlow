@@ -1,10 +1,12 @@
 import { Show } from "solid-js"
-import { store } from "../stores/todoStore";
+import { loadTodos } from "../stores/todoStore";
 
 export const TodoStats = () => {
 
-  const completedCount = () => store.todos.filter((todo) => todo.completed).length;
-  const totalCount = () => store.todos.length;
+  const todos = loadTodos()
+
+  const completedCount = () => todos().filter((todo) => todo.completed).length;
+  const totalCount = () => todos().length;
   return (
 
     <Show when={totalCount() > 0}>

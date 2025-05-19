@@ -14,20 +14,25 @@
 
 import { createEffect, createSignal, Show } from "solid-js";
 import { Todo } from "../../shared/schema";
-import { deleteTodo, saveEditedTodo, setEditingTodoId, toggleTodo } from "../stores/todoStore";
+import { deleteTodo, saveEditedTodo, setEditingTodoId, store, toggleTodo } from "../stores/todoStore";
+import { useZero } from "../ZeroContext";
+import { formatUnixTime } from "../utils/date";
 
 interface TodoItemProps {
   todo: Todo;
 }
 
 const TodoItem = (props: TodoItemProps) => {
-  const [editText, setEditText] = createSignal(props.todo.rawText);
+  const z = useZero()
+
+  const [editText, setEditText] = createSignal('');
+
   let editInputRef: HTMLInputElement | undefined;
   let todoItemRef: HTMLLIElement | undefined;
 
   // Check if the todo is currently being edited
-  // const isEditing = () => store.editingTodoId === props.todo.id;
-  const isEditing = () => false;
+  const isEditing = () => store.editingTodoId === props.todo.id;
+  // const isEditing = () => false;
 
   const handleEdit = () => {
     setEditText(props.todo.rawText); // Reset editText to current rawText when starting edit
@@ -46,15 +51,11 @@ const TodoItem = (props: TodoItemProps) => {
     const trimmedText = editText().trim();
     if (trimmedText) {
       if (trimmedText !== props.todo.rawText) { // Only save if text actually changed
-        saveEditedTodo(props.todo.id, trimmedText);
-      } else {
-        setEditingTodoId(null); // Exit editing mode if no change
+        saveEditedTodo(z, props.todo.id, trimmedText);
       }
-    } else {
-      // just cancel if it's empty
-      handleCancel();
-      // if you want to delete the todo, use deleteTodo
     }
+    // cancel after saving and when it's empty
+    setEditingTodoId(null);
   };
 
   const handleCancel = () => {
@@ -75,8 +76,9 @@ const TodoItem = (props: TodoItemProps) => {
 
   // Helper to display parts of the todo
   const displayPriority = () => props.todo.priority ? `(${props.todo.priority}) ` : '';
-  const displayCreationDate = () => props.todo.createdAt ? `${props.todo.createdAt} ` : '';
-  const displayCompletionDate = () => props.todo.completionDate ? `${props.todo.completionDate} ` : '';
+  // make it friendlier: show day name if the same week? use a library
+  const displayCreationDate = () => props.todo.createdAt ? formatUnixTime(props.todo.createdAt) : '';
+  const displayCompletionDate = () => props.todo.completionDate ? formatUnixTime(props.todo.completionDate) : '';
 
   return (
     <li
@@ -95,7 +97,7 @@ const TodoItem = (props: TodoItemProps) => {
             <input
               ref={editInputRef}
               type="text"
-              value={editText()}
+              value={props.todo.rawText}
               onInput={(e) => setEditText(e.currentTarget.value)}
               onKeyDown={handleKeyDown}
               class="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
@@ -123,12 +125,12 @@ const TodoItem = (props: TodoItemProps) => {
           type="checkbox"
           class="mt-1 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer flex-shrink-0"
           checked={props.todo.completed}
-          onChange={() => toggleTodo(props.todo.id)}
+          onChange={() => toggleTodo(z, props.todo.id)}
           aria-label={`Mark todo as ${props.todo.completed ? 'incomplete' : 'complete'}`}
         />
         <div class="flex-grow min-w-0" onClick={handleEdit} role="button" title="Click to edit"> {/* Make text area clickable to edit */}
           <div class="text-xs text-gray-500 break-all"> {/* `break-all` for long metadata strings */}
-            {props.todo.completed && displayCompletionDate()}
+            {props.todo.completed && displayCompletionDate() + ' | '}
             {!props.todo.completed && displayPriority()}
             {displayCreationDate()}
           </div>
@@ -136,17 +138,23 @@ const TodoItem = (props: TodoItemProps) => {
             {props.todo.description}
           </p>
           {/* TODO: Solve this */}
-          {(props.todo.projectName === '' || props.todo.areaName === '' || Object.keys(props.todo.metadata ? props.todo.metadata : {}).length > 0) && (
-            <div class="text-xs mt-1 text-gray-600 break-all">
-              <span class="mr-1.5 text-purple-600 inline-block whitespace-nowrap">+{props.todo.projectName}</span>
-              <span class="mr-1.5 text-purple-600 inline-block whitespace-nowrap">+{props.todo.areaName}</span>
-              {Object.entries(props.todo.metadata!).map(([key, value]) => (
-                <span class="mr-1.5 text-gray-500 inline-block whitespace-nowrap" title={`${key}: ${value}`}>
-                  {key}:{value!.toString().length > 10 ? value!.toString().substring(0, 10) + '...' : value}
-                </span>
-              ))}
-            </div>
-          )}
+
+          <Show when={props.todo.areaName}>
+            <span class="mr-1.5 text-green-600 inline-block whitespace-nowrap">@{props.todo.areaName}</span>
+          </Show>
+
+          <Show when={props.todo.projectName}>
+            <span class="mr-1.5 text-purple-600 inline-block whitespace-nowrap">+{props.todo.projectName}</span>
+          </Show>
+
+          <Show when={Object.keys(props.todo.metadata ? props.todo.metadata : {}).length > 0}>
+            {Object.entries(props.todo.metadata!).map(([key, value]) => (
+              <span class="mr-1.5 text-gray-500 inline-block whitespace-nowrap" title={`${key}: ${value}`}>
+                {key}:{value!.toString().length > 10 ? value!.toString().substring(0, 10) + '...' : value}
+              </span>
+            ))}
+          </Show>
+
         </div>
         <div class="flex flex-col items-center gap-1 ml-2 flex-shrink-0">
           {/* <button
@@ -157,7 +165,7 @@ const TodoItem = (props: TodoItemProps) => {
             Edit
           </button> */}
           <button
-            onClick={() => deleteTodo(props.todo.id)}
+            onClick={() => deleteTodo(z, props.todo.id)}
             class="text-red-500 hover:text-red-700 font-semibold py-1 px-1 rounded text-xs"
             aria-label={`Delete todo: ${props.todo.description}`}
           >

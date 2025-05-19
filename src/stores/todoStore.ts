@@ -1,32 +1,13 @@
 import { createStore, produce } from "solid-js/store";
 import { FilterOption, FilterType } from "../types";
-import { Accessor, createEffect, createMemo } from "solid-js";
-import { formatTodoTxtItem, parseTodoTxtLine } from "../parsers/todoTxtParser";
+import { createMemo } from "solid-js";
+import { parseTodoTxtLine } from "../parsers/todoTxtParser";
 import { Zero } from "@rocicorp/zero";
-import { createQuery, createZero } from "@rocicorp/zero/solid";
-import { Todo } from "../../shared/schema";
+import { createQuery } from "@rocicorp/zero/solid";
 
-import { schema, type Schema } from '../../shared/schema';
-import { createMutators, type Mutators } from '../../shared/mutators';
+import { Todo, type Schema } from '../../shared/schema';
+import { type Mutators } from '../../shared/mutators';
 import { useZero } from "../ZeroContext";
-// import { z } from "../zero";
-
-// export const z = createZero<Schema, Mutators>({
-//   server: serverURL,
-//   schema,
-//   userID: userID, // Later, this should come from auth
-//   kvStore: 'idb',
-//   // Auth token if you implement JWT authentication
-//   // auth: async () => { /* fetch JWT token */ return 'your_jwt_token'; },
-//   mutators: createMutators(userID), // Pass userID if mutators need it for permissions
-//   push: {
-//     queryParams: { // Example if your push server needs extra static info per client
-//       // clientID: 'some-client-identifier',
-//     }
-//   }
-// });
-
-// const LOCAL_STORAGE_KEY = 'todos';
 
 
 export function loadTodos() {
@@ -34,13 +15,16 @@ export function loadTodos() {
 
   const [todosQuery] = createQuery(() =>
     z.query.todo // Use singular 'todo' if that's your Zero schema table name
-      .related('project') // Assumes 'project' is the relationship name in schema.ts
-      .related('area') // Assumes 'context' is the relationship name
-      .orderBy('createdAt', 'desc')
+    // .related('project') // Assumes 'project' is the relationship name in schema.ts
+    // .related('area') // Assumes 'context' is the relationship name
+    // .orderBy('createdAt', 'desc')
   );
 
   return todosQuery
 }
+
+
+
 //
 //
 // // const loadTodos = (): Todo[] => {
@@ -66,24 +50,24 @@ export function loadTodos() {
 // //   return []; // Return empty array if nothing stored or parsing failed
 // // };
 //
-// interface TodoStoreState {
-//   todos: Todo[];
-//   activeFilter: FilterOption;
-//   // For specific project/context filtering
-//   selectedProject?: string;
-//   selectedContext?: string;
-//   editingTodoId?: string | null; // ID of the todo being edited, or null/undefined
-// }
+interface TodoStoreState {
+  // todos: Todo[];
+  activeFilter: FilterOption;
+  // For specific project/context filtering
+  selectedProject?: string;
+  selectedArea?: string;
+  editingTodoId?: string | null; // ID of the todo being edited, or null/undefined
+}
 //
 // // We'll export the store and its actions directly
 // // This creates a single global instance of the store.
-// const [store, setStore] = createStore<TodoStoreState>({
-//   todos: [],
-//   activeFilter: { type: FilterType.PRIORITY, label: 'By Priority' },
-//   selectedProject: undefined,
-//   selectedContext: undefined,
-//   editingTodoId: null,
-// });
+const [store, setStore] = createStore<TodoStoreState>({
+  editingTodoId: null,
+  // todos: [],
+  activeFilter: { type: FilterType.PRIORITY, label: 'By Priority' },
+  selectedProject: undefined,
+  selectedArea: undefined,
+});
 
 //
 // // Actions to modify the store
@@ -119,34 +103,48 @@ export const addTodo = async (z: Zero<Schema, Mutators>, text: string) => {
     alert(`Error adding todo: ${e.message}`);
   }
 };
-//
-//
-//
-export const deleteTodo = async (id: string) => {
-  if (confirm("Are you sure you want to delete this todo?")) {
-    const z = useZero()
-    try {
-      return await z.mutate.todo.delete({ id }).client;
-    } catch (e: any) {
-      console.error("Failed to delete todo:", e);
-      alert(`Error deleting todo: ${e.message}`);
-    }
+
+export const saveEditedTodo = async (z: Zero<Schema, Mutators>, id: string, text: string) => {
+  console.log('here')
+  if (!text) return;
+  const { description, projectName, areaName: contextName, priority, dueDate } = parseTodoTxtLine(text);
+
+  if (!description) {
+    alert("Todo description cannot be empty after parsing metadata.");
+    return;
+  }
+
+  try {
+    await z.mutate.todo.update({ id, rawText: text, description, projectName, areaName: contextName, priority, dueDate }).client; // Use .client to await optimistic update
+  } catch (e: any) {
+    console.error("Failed to update todo:", e);
+    alert(`Error updating todo: ${e.message}`);
+  }
+};
+
+// TODO: move deleted todo to archive and don't alert
+export const deleteTodo = async (z: Zero<Schema, Mutators>, id: string) => {
+  // if (confirm("Are you sure you want to delete this todo?")) {
+  try {
+    return await z.mutate.todo.delete({ id }).client;
+  } catch (e: any) {
+    console.error("Failed to delete todo:", e);
+    alert(`Error deleting todo: ${e.message}`);
+  }
+  // }
+};
+
+
+export const toggleTodo = async (z: Zero<Schema, Mutators>, id: string) => {
+  try {
+    await z.mutate.todo.toggleCompleted({ id }).client;
+  } catch (e: any) {
+    console.error("Failed to toggle todo:", e);
+    alert(`Error toggling todo: ${e.message}`);
   }
 };
 
 
-// export function loadTodos() {
-//   const z = useZero()
-//
-//   const [todosQuery] = createQuery(() =>
-//     z.query.todo // Use singular 'todo' if that's your Zero schema table name
-//       .related('project') // Assumes 'project' is the relationship name in schema.ts
-//       .related('area') // Assumes 'context' is the relationship name
-//       .orderBy('createdAt', 'desc')
-//   );
-//
-//   return todosQuery
-// }
 
 //
 //
@@ -168,24 +166,16 @@ export const deleteTodo = async (id: string) => {
 // //   );
 // // };
 //
-export const toggleTodo = async (id: string) => {
-  const z = useZero()
-  try {
-    await z.mutate.todo.toggleCompleted({ id }).client;
-  } catch (e: any) {
-    console.error("Failed to toggle todo:", e);
-    alert(`Error toggling todo: ${e.message}`);
-  }
-};
 //
 //
 export const setEditingTodoId = (id: string | null) => {
-  // setStore('editingTodoId', id);
+  setStore('editingTodoId', id);
 };
 
 
-export const saveEditedTodo = (id: string, rawUpdatedText: string) => {
-}
+// export const saveEditedTodo = (z, id: string, rawUpdatedText: string) => {
+//   // addTodo(z, rawUpdatedText)
+// }
 // // This action will take the raw text from the edit input
 // const saveEditedTodo = (id: string, rawUpdatedText: string) => {
 //   const updatedParsedTodo = parseTodoTxtLine(rawUpdatedText); // Re-parse the edited text
@@ -229,23 +219,23 @@ export const saveEditedTodo = (id: string, rawUpdatedText: string) => {
 // // });
 //
 //
-// const setActiveFilter = (filter: FilterOption) => {
-//   setStore(
-//     produce(s => {
-//       s.activeFilter = filter;
-//       if (filter.type === FilterType.PROJECT) {
-//         s.selectedProject = filter.value;
-//         s.selectedContext = undefined;
-//       } else if (filter.type === FilterType.CONTEXT) {
-//         s.selectedContext = filter.value;
-//         s.selectedProject = undefined;
-//       } else {
-//         s.selectedProject = undefined;
-//         s.selectedContext = undefined;
-//       }
-//     })
-//   );
-// };
+export const setActiveFilter = (filter: FilterOption) => {
+  setStore(
+    produce(s => {
+      s.activeFilter = filter;
+      if (filter.type === FilterType.PROJECT) {
+        s.selectedProject = filter.value;
+        s.selectedArea = undefined;
+      } else if (filter.type === FilterType.AREA) {
+        s.selectedArea = filter.value;
+        s.selectedProject = undefined;
+      } else {
+        s.selectedProject = undefined;
+        s.selectedArea = undefined;
+      }
+    })
+  );
+};
 //
 // // // Query for projects to populate filter dropdown
 // const [projectsQuery] = createQuery(() => z.query.project.orderBy('name', 'asc')); // Singular
@@ -383,17 +373,17 @@ export function useAvailableProjects() {
 // // });
 //
 // // Export the reactive store state and the actions
-// export {
-//   store,
-//   addTodo,
-//   deleteTodo,
-//   toggleTodo,
-//   // updateTodo,
-//   setActiveFilter,
-//   availableProjects,
-//   availableContexts,
-//   filteredTodos, // Components will use this
-//   saveEditedTodo, // New action for saving edits
-//   setEditingTodoId, // New action to control edit mode
-// };
-//
+export {
+  store,
+  // addTodo,
+  // deleteTodo,
+  // toggleTodo,
+  // updateTodo,
+  // setActiveFilter,
+  // availableProjects,
+  // availableContexts,
+  // filteredTodos, // Components will use this
+  // saveEditedTodo, // New action for saving edits
+  // setEditingTodoId, // New action to control edit mode
+};
+

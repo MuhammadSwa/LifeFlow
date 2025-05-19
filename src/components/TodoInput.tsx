@@ -1,11 +1,12 @@
-import { createSignal, onMount, useContext, } from "solid-js";
-import { addTodo, useAvailableAreas, useAvailableProjects, } from "../stores/todoStore";
+import { createSignal, onMount, } from "solid-js";
+import { addTodo } from "../stores/todoStore";
 import SuggestionDropdown from "./SuggestionDropdown";
 import { parseTodoTxtLine } from "../parsers/todoTxtParser";
 import TimePickerPopup from "./TimePickerPopup";
 import { Caret } from "textarea-caret-ts";
 import { Todo } from "../../shared/schema";
 import { useZero } from "../ZeroContext";
+import { createQuery } from "@rocicorp/zero/solid";
 
 // Type for the suggestion mode
 type SuggestionMode = null | 'priority' | 'project' | 'context' | 'date_keyword';
@@ -28,14 +29,18 @@ const getCharRectInInput = (inputRef: HTMLTextAreaElement | undefined): { top: n
 const TodoInput = () => {
   // --- State Signals ---
   const [inputValue, setInputValue] = createSignal('');
-  const availableProjects = useAvailableProjects()
-  const availableAreas = useAvailableAreas()
+  // const availableProjects = useAvailableProjects()
+  // const availableAreas = useAvailableAreas()
   const z = useZero()
   let inputRef: HTMLTextAreaElement | undefined; // Ref for the input element
 
 
+  const [availableProjects] = createQuery(() => z.query.project.orderBy('name', 'asc')); // Singular
+  const [availableAreas] = createQuery(() => z.query.area.orderBy('name', 'asc')); // Singular
+
+
   onMount(() => {
-    console.log("areas", availableAreas()()[0])
+    console.log(availableProjects()[0])
     inputRef?.focus();
   })
 
@@ -80,20 +85,29 @@ const TodoInput = () => {
     context: {
       triggerPattern: '@',
       condition: (_, currentWord, existingTodo) =>
-        currentWord.startsWith('@') && existingTodo.areaName === '', // Allow multiple later if needed
+        currentWord.startsWith('@') && existingTodo.areaName === null, // Allow multiple later if needed
       getItems: (currentWord) => {
         const query = currentWord.substring(1).toLowerCase();
-        return availableAreas().filter(c => c.toLowerCase().startsWith(query));
+        const areas = availableAreas(); // Call the accessor
+        if (!areas) return []; // Guard against undefined/null
+        return areas
+          .filter(p => p.name.toLowerCase().startsWith(query))
+          .map(p => p.name); // <--- Added .map(p => p.name)
       },
       getPopupPosition: () => getCharRectInInput(inputRef),
     },
     project: {
       triggerPattern: '+',
       condition: (_, currentWord, existingTodo) =>
-        currentWord.startsWith('+') && existingTodo.projectName === '', // Allow multiple later if needed
+        currentWord.startsWith('+') && existingTodo.projectName === null, // Allow multiple later if needed
       getItems: (currentWord) => {
         const query = currentWord.substring(1).toLowerCase();
-        return availableProjects().filter(p => p.toLowerCase().startsWith(query));
+        const projects = availableProjects(); // Call the accessor
+        if (!projects) return []; // Guard against undefined/null
+        return projects
+          .filter(p => p.name.toLowerCase().startsWith(query))
+          .map(p => p.name); // <--- Added .map(p => p.name)
+
       },
       getPopupPosition: () => getCharRectInInput(inputRef),
     },

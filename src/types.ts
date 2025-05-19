@@ -29,7 +29,7 @@ export enum FilterType {
   COMPLETED = 'COMPLETED',
   PRIORITY = 'PRIORITY', // Default sort
   PROJECT = 'PROJECT',
-  CONTEXT = 'CONTEXT',
+  AREA = 'CONTEXT',
   // You can add more specific ones like TODAY, OVERDUE, etc.
 }
 
