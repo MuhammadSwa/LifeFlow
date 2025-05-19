@@ -16,7 +16,7 @@ import postgres from 'postgres';
 // For simplicity, ensure your tsconfig in `push-server` can "see" these files
 // or consider a monorepo setup for easier sharing.
 // A common way if `push-server` is a sibling to `src` and you run from root:
-import { schema, type Schema } from '../shared/schema.js'; // Note the .js extension for ESM
+import { schema, type Schema } from '../shared/schema.ts'; // Note the .js extension for ESM
 import { createMutators, type Mutators } from '../shared/mutators.ts'; // Note the .js extension
 
 const app = new Hono();

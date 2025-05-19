@@ -20,7 +20,8 @@ export const ZeroProvider: ParentComponent = (props) => {
   console.log("[ZeroProvider] Initializing Zero client 'z' for context...");
 
   const serverURL = import.meta.env.VITE_PUBLIC_ZERO_SERVER || 'http://localhost:4848';
-  const userID = import.meta.env.VITE_PUBLIC_USER_ID || 'anonymous';
+  // const userID = import.meta.env.VITE_PUBLIC_USER_ID || 'anonymous';
+  const userID = "a-very-secure-secret-for-dev"
   // Define your AuthData based on how createMutators expects it
   const authDataForMutators = { userID }; // Or undefined, or a more complex object
 
@@ -33,7 +34,7 @@ export const ZeroProvider: ParentComponent = (props) => {
     kvStore: 'idb',
     // Auth token if you implement JWT authentication
     // auth: async () => { /* fetch JWT token */ return 'your_jwt_token'; },
-    mutators: createMutators(userID), // Pass userID if mutators need it for permissions
+    mutators: createMutators({ userID }), // Pass userID if mutators need it for permissions
     push: {
       queryParams: { // Example if your push server needs extra static info per client
         // clientID: 'some-client-identifier',

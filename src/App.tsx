@@ -107,15 +107,6 @@ function App() {
   return (
     <div class="p-4 max-w-xl mx-auto"> {/* Increased max-width a bit */}
 
-
-      <For each={todosQuery()}>
-        {(todo) => (
-          <>
-            <li>{todo.description}</li>
-          </>
-        )}
-      </For>
-
       <TodoInput />
       {/**/}
       <FilterControls />
