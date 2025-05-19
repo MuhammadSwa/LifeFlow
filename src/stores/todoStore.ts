@@ -102,7 +102,7 @@ interface TodoStoreState {
 //
 
 // Create a single global instance of the store
-const [store, setStore] = createStore<TodoStoreState>({
+export const [store, setStore] = createStore<TodoStoreState>({
   editingTodoId: null,
   activeFilter: { type: FilterType.ALL, label: 'All' },
   selectedProject: undefined,
@@ -118,24 +118,6 @@ export const setActiveFilter = (filter: FilterOption) => {
     })
   );
 };
-
-// export const setActiveFilter = (filter: FilterOption) => {
-//   setStore(
-//     produce(s => {
-//       s.activeFilter = filter;
-//       if (filter.type === FilterType.PROJECT) {
-//         s.selectedProject = filter.value;
-//         s.selectedArea = undefined;
-//       } else if (filter.type === FilterType.AREA) {
-//         s.selectedArea = filter.value;
-//         s.selectedProject = undefined;
-//       } else {
-//         s.selectedProject = undefined;
-//         s.selectedArea = undefined;
-//       }
-//     })
-//   );
-// };
 
 // Helper function for query construction based on active filters
 export const getActiveFilters = () => {
@@ -256,20 +238,4 @@ export function useAvailableProjects() {
   return projects
 
 }
-
-// // Export the reactive store state and the actions
-export {
-  store,
-  setStore,
-  // addTodo,
-  // deleteTodo,
-  // toggleTodo,
-  // updateTodo,
-  // setActiveFilter,
-  // availableProjects,
-  // availableContexts,
-  // filteredTodos, // Components will use this
-  // saveEditedTodo, // New action for saving edits
-  // setEditingTodoId, // New action to control edit mode
-};
 

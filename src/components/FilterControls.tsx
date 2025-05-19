@@ -147,12 +147,13 @@ const FilterControls: Component = () => {
             Reset
           </button>
         </Show>
-
+        {/*
         <Show when={store.selectedProject && store.selectedArea}>
           <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
             Filtering by project and area
           </span>
         </Show>
+          */}
       </div>
     </div>
   );

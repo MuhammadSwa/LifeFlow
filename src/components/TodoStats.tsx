@@ -17,7 +17,7 @@ export const TodoStats: Component = () => {
   const isFiltered = () => {
     return store.selectedProject !== undefined ||
       store.selectedArea !== undefined ||
-      store.activeFilter.type !== 'PRIORITY';
+      store.activeFilter.type !== 'ALL';
   };
 
   return (
