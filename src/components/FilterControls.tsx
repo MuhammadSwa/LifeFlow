@@ -1,12 +1,13 @@
 // src/components/FilterControls.tsx
-import { Component, For, createMemo } from 'solid-js';
+import { Component, For, createMemo, Show } from 'solid-js';
 import {
-  setActiveFilter,
   store,
+  setStore,
 } from '../stores/todoStore';
 import { FilterType, FilterOption } from '../types';
 import { useZero } from '../ZeroContext';
 import { createQuery } from '@rocicorp/zero/solid';
+import { produce } from 'solid-js/store';
 
 const FilterControls: Component = () => {
   const z = useZero();
@@ -14,22 +15,58 @@ const FilterControls: Component = () => {
   const [availableAreas] = createQuery(() => z.query.area.orderBy('name', 'asc'));
 
   const filters = createMemo(() => [
-    { type: FilterType.PRIORITY, label: 'Priority' },
     { type: FilterType.ALL, label: 'All' },
     { type: FilterType.ACTIVE, label: 'Active' },
     { type: FilterType.COMPLETED, label: 'Completed' },
   ]);
 
-  const applyFilter = (filter: FilterOption) => {
-    setActiveFilter(filter);
+  // Apply a base filter (all, active, completed)
+  const applyBaseFilter = (filter: FilterOption) => {
+    setStore(
+      produce(s => {
+        s.activeFilter = filter;
+        // Keep project and area selections when changing base filter
+      })
+    );
   };
 
-  const isActive = (type: FilterType) => {
+  // Toggle project selection
+  const setProjectFilter = (projectName: string | null) => {
+    setStore(
+      produce(s => {
+        s.selectedProject = projectName || undefined;
+      })
+    );
+  };
+
+  // Toggle area selection
+  const setAreaFilter = (areaName: string | null) => {
+    setStore(
+      produce(s => {
+        s.selectedArea = areaName || undefined;
+      })
+    );
+  };
+
+  // Reset all filters
+  const resetFilters = () => {
+    setStore(
+      produce(s => {
+        s.activeFilter = { type: FilterType.ALL, label: 'All' };
+        s.selectedProject = undefined;
+        s.selectedArea = undefined;
+      })
+    );
+  };
+
+  const isBaseFilterActive = (type: FilterType) => {
     return store.activeFilter.type === type;
   };
 
-  const currentValue = (type: FilterType) => {
-    return store.activeFilter.type === type ? store.activeFilter.value : '';
+  const hasActiveFilters = () => {
+    return store.selectedProject !== undefined ||
+      store.selectedArea !== undefined ||
+      store.activeFilter.type !== FilterType.ALL;
   };
 
   return (
@@ -38,11 +75,11 @@ const FilterControls: Component = () => {
         <For each={filters()}>
           {(filter) => (
             <button
-              class={`px-3 py-1.5 text-sm rounded-full transition-colors ${isActive(filter.type)
+              class={`px-3 py-1.5 text-sm rounded-full transition-colors ${isBaseFilterActive(filter.type)
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                 }`}
-              onClick={() => applyFilter(filter)}
+              onClick={() => applyBaseFilter(filter)}
             >
               {filter.label}
             </button>
@@ -50,21 +87,18 @@ const FilterControls: Component = () => {
         </For>
       </div>
 
-      <div class="flex flex-wrap gap-3">
+      <div class="flex flex-wrap gap-3 items-center">
         <div class="relative">
           <select
-            class="appearance-none pl-3 pr-8 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            class={`appearance-none pl-3 pr-8 py-1.5 border rounded-md text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${store.selectedProject
+              ? 'bg-blue-50 border-blue-200'
+              : 'bg-gray-50 border-gray-200'
+              }`}
             onChange={(e) => {
               const value = e.currentTarget.value;
-              if (value) {
-                applyFilter({
-                  type: FilterType.PROJECT,
-                  label: `Project: ${value}`,
-                  value
-                });
-              }
+              setProjectFilter(value || null);
             }}
-            value={currentValue(FilterType.PROJECT)}
+            value={store.selectedProject || ''}
           >
             <option value="">All Projects</option>
             <For each={availableProjects()}>
@@ -80,18 +114,15 @@ const FilterControls: Component = () => {
 
         <div class="relative">
           <select
-            class="appearance-none pl-3 pr-8 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            class={`appearance-none pl-3 pr-8 py-1.5 border rounded-md text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${store.selectedArea
+              ? 'bg-blue-50 border-blue-200'
+              : 'bg-gray-50 border-gray-200'
+              }`}
             onChange={(e) => {
               const value = e.currentTarget.value;
-              if (value) {
-                applyFilter({
-                  type: FilterType.AREA,
-                  label: `Area: ${value}`,
-                  value
-                });
-              }
+              setAreaFilter(value || null);
             }}
-            value={currentValue(FilterType.AREA)}
+            value={store.selectedArea || ''}
           >
             <option value="">All Areas</option>
             <For each={availableAreas()}>
@@ -105,17 +136,23 @@ const FilterControls: Component = () => {
           </div>
         </div>
 
-        {store.activeFilter.type !== FilterType.PRIORITY && (
+        <Show when={hasActiveFilters()}>
           <button
             class="px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 flex items-center"
-            onClick={() => applyFilter({ type: FilterType.PRIORITY, label: 'Priority' })}
+            onClick={resetFilters}
           >
             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
             Reset
           </button>
-        )}
+        </Show>
+
+        <Show when={store.selectedProject && store.selectedArea}>
+          <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+            Filtering by project and area
+          </span>
+        </Show>
       </div>
     </div>
   );
