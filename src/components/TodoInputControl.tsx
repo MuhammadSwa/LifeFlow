@@ -1,5 +1,4 @@
 import { createSignal, onMount } from "solid-js";
-import { availableContexts, availableProjects } from "../stores/todoStore";
 import SuggestionDropdown from "./SuggestionDropdown";
 import { parseTodoTxtLine } from "../parsers/todoTxtParser";
 import { Todo } from "../types";

@@ -3,9 +3,11 @@ import './index.css';
 import { render } from 'solid-js/web';
 
 import App from './App';
+import { schema, type Schema } from '../shared/schema';
+import { createMutators, type Mutators } from '../shared/mutators';
 import { createZero } from '@rocicorp/zero/solid';
-import { type Schema, schema } from '../shared/schema';
-import { createMutators, type Mutators } from '../shared/mutators'; // We'll create this next
+import { ZeroProvider } from './ZeroContext';
+
 
 const root = document.getElementById('root');
 
@@ -24,7 +26,7 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
 
 const serverURL = import.meta.env.VITE_PUBLIC_ZERO_SERVER || 'http://localhost:4848';
 const userID = import.meta.env.VITE_PUBLIC_USER_ID || 'anonymous_client_user'; // Or from actual auth
-
+//
 export const z = createZero<Schema, Mutators>({
   server: serverURL,
   schema,
@@ -39,9 +41,17 @@ export const z = createZero<Schema, Mutators>({
     }
   }
 });
+//
+// // For debugging and inspection.
+// (window as any)._zero = z;
 
-// For debugging and inspection.
-(window as any)._zero = z;
 
-
-render(() => <App z={z} />, root!);
+// render(() => <App />, root!);
+render(
+  () => (
+    <ZeroProvider> {/* Wrap your App component */}
+      <App />
+    </ZeroProvider>
+  ),
+  root!
+);

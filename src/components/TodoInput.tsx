@@ -1,11 +1,11 @@
-import { createSignal, onMount, } from "solid-js";
-import { addTodo, availableContexts, availableProjects } from "../stores/todoStore";
+import { createSignal, onMount, useContext, } from "solid-js";
+import { addTodo, useAvailableAreas, useAvailableProjects, } from "../stores/todoStore";
 import SuggestionDropdown from "./SuggestionDropdown";
 import { parseTodoTxtLine } from "../parsers/todoTxtParser";
 import TimePickerPopup from "./TimePickerPopup";
 import { Caret } from "textarea-caret-ts";
-import { z } from "..";
 import { Todo } from "../../shared/schema";
+import { useZero } from "../ZeroContext";
 
 // Type for the suggestion mode
 type SuggestionMode = null | 'priority' | 'project' | 'context' | 'date_keyword';
@@ -28,10 +28,14 @@ const getCharRectInInput = (inputRef: HTMLTextAreaElement | undefined): { top: n
 const TodoInput = () => {
   // --- State Signals ---
   const [inputValue, setInputValue] = createSignal('');
+  const availableProjects = useAvailableProjects()
+  const availableAreas = useAvailableAreas()
+  const z = useZero()
   let inputRef: HTMLTextAreaElement | undefined; // Ref for the input element
 
 
   onMount(() => {
+    console.log("areas", availableAreas()()[0])
     inputRef?.focus();
   })
 
@@ -79,7 +83,7 @@ const TodoInput = () => {
         currentWord.startsWith('@') && existingTodo.areaName === '', // Allow multiple later if needed
       getItems: (currentWord) => {
         const query = currentWord.substring(1).toLowerCase();
-        return availableContexts().filter(c => c.toLowerCase().startsWith(query));
+        return availableAreas().filter(c => c.toLowerCase().startsWith(query));
       },
       getPopupPosition: () => getCharRectInInput(inputRef),
     },

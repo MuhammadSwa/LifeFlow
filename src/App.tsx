@@ -2,16 +2,18 @@ import TodoInput from './components/TodoInput';
 import TodoList from './components/TodoList';
 import { TodoStats } from './components/TodoStats';
 import FilterControls from './components/FilterControls';
-import { Todo, TodoWithRelations, type Schema } from '../shared/schema';
-import { createQuery } from '@rocicorp/zero/solid'
-import { Zero } from '@rocicorp/zero';
-import { Mutators } from '../shared/mutators';
-import { createMemo, createSignal, For } from 'solid-js';
-import { parseTodoTxtLine } from './parsers/todoTxtParser';
+import { Todo } from '../shared/schema';
+import { createSignal, For, onMount, } from 'solid-js';
+// import { z } from './zero';
+import { createQuery } from '@rocicorp/zero/solid';
+import { useZero } from './ZeroContext';
+import { addTodo, loadTodos } from './stores/todoStore';
 
 
 
-function App({ z }: { z: Zero<Schema, Mutators> }) {
+// function App({ z }: { z: Zero<Schema, Mutators> }) {
+function App() {
+
 
 
 
@@ -31,14 +33,19 @@ function App({ z }: { z: Zero<Schema, Mutators> }) {
   const [filterPriority, setFilterPriority] = createSignal<Todo['priority'] | 'all'>('all');
 
 
-  // --- Zero Queries ---
-  // Query for all todos, including related project and context for display and filtering
-  const [todosQuery] = createQuery(() =>
-    z.query.todo // Use singular 'todo' if that's your Zero schema table name
-      .related('project') // Assumes 'project' is the relationship name in schema.ts
-      .related('area') // Assumes 'context' is the relationship name
-      .orderBy('createdAt', 'desc')
-  );
+  const todosQuery = loadTodos()
+  // addTodo('todo @area +project')
+  onMount(() => {
+  })
+  // const z = useZero();
+  // // --- Zero Queries ---
+  // // Query for all todos, including related project and context for display and filtering
+  // const [todosQuery] = createQuery(() =>
+  //   z.query.todo // Use singular 'todo' if that's your Zero schema table name
+  //     .related('project') // Assumes 'project' is the relationship name in schema.ts
+  //     .related('area') // Assumes 'context' is the relationship name
+  //     .orderBy('createdAt', 'desc')
+  // );
 
 
 
@@ -63,42 +70,37 @@ function App({ z }: { z: Zero<Schema, Mutators> }) {
 
 
 
-  // // Query for projects to populate filter dropdown
-  const projectsQuery = createQuery(() => z.query.project.orderBy('name', 'asc')); // Singular
-  //
-  // // Query for contexts to populate filter dropdown
-  const areaQuery = createQuery(() => z.query.area.orderBy('name', 'asc')); // Singular
   //
   // // --- Derived Memos ---
   // NOTE: what does this do?
-  const todosWithRelations = createMemo<TodoWithRelations[]>(() => {
-    return (todosQuery() ?? []).map(t => ({
-      ...t,
-      // The .related() calls should already populate these if relationships are set up
-      // project: t.project, 
-      // context: t.context,
-    })) as TodoWithRelations[]; // Cast if necessary, Zero should type this well
-  });
+  // const todosWithRelations = createMemo<TodoWithRelations[]>(() => {
+  //   return (todosQuery() ?? []).map(t => ({
+  //     ...t,
+  //     // The .related() calls should already populate these if relationships are set up
+  //     // project: t.project, 
+  //     // context: t.context,
+  //   })) as TodoWithRelations[]; // Cast if necessary, Zero should type this well
+  // });
 
   //
   //
-  const filteredTodos = createMemo(() => {
-    let items = todosWithRelations(); // Start with all todos (with relations)
-
-    if (filterCompleted() !== 'all') {
-      items = items.filter(todo => todo.completed === filterCompleted());
-    }
-    if (filterProjectName() !== 'all') {
-      items = items.filter(todo => todo.projectName === filterProjectName());
-    }
-    if (filterContextName() !== 'all') {
-      items = items.filter(todo => todo.areaName === filterContextName());
-    }
-    if (filterPriority() !== 'all') {
-      items = items.filter(todo => todo.priority === filterPriority());
-    }
-    return items;
-  });
+  // const filteredTodos = createMemo(() => {
+  //   let items = todosWithRelations(); // Start with all todos (with relations)
+  //
+  //   if (filterCompleted() !== 'all') {
+  //     items = items.filter(todo => todo.completed === filterCompleted());
+  //   }
+  //   if (filterProjectName() !== 'all') {
+  //     items = items.filter(todo => todo.projectName === filterProjectName());
+  //   }
+  //   if (filterContextName() !== 'all') {
+  //     items = items.filter(todo => todo.areaName === filterContextName());
+  //   }
+  //   if (filterPriority() !== 'all') {
+  //     items = items.filter(todo => todo.priority === filterPriority());
+  //   }
+  //   return items;
+  // });
 
   //
   const priorityDisplay = (priority: Todo['priority']) => {
@@ -113,18 +115,17 @@ function App({ z }: { z: Zero<Schema, Mutators> }) {
       <For each={todosQuery()}>
         {(todo) => (
           <>
-            <li>hello</li>
             <li>{todo.description}</li>
           </>
         )}
       </For>
 
       <TodoInput />
-
-      <FilterControls /> {/* Add the filter controls */}
-
-      <TodoStats />
-
+      {/**/}
+      {/* <FilterControls /> */} {/* Add the filter controls */}
+      {/**/}
+      {/* <TodoStats /> */}
+      {/**/}
       <TodoList />
 
 

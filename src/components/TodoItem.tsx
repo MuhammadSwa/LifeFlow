@@ -13,8 +13,8 @@
 // a single todo item
 
 import { createEffect, createSignal, Show } from "solid-js";
-import { Todo } from "../types";
-import { deleteTodo, saveEditedTodo, setEditingTodoId, store, toggleTodo } from "../stores/todoStore";
+import { Todo } from "../../shared/schema";
+import { deleteTodo, saveEditedTodo, setEditingTodoId, toggleTodo } from "../stores/todoStore";
 
 interface TodoItemProps {
   todo: Todo;
@@ -26,7 +26,8 @@ const TodoItem = (props: TodoItemProps) => {
   let todoItemRef: HTMLLIElement | undefined;
 
   // Check if the todo is currently being edited
-  const isEditing = () => store.editingTodoId === props.todo.id;
+  // const isEditing = () => store.editingTodoId === props.todo.id;
+  const isEditing = () => false;
 
   const handleEdit = () => {
     setEditText(props.todo.rawText); // Reset editText to current rawText when starting edit
@@ -74,7 +75,7 @@ const TodoItem = (props: TodoItemProps) => {
 
   // Helper to display parts of the todo
   const displayPriority = () => props.todo.priority ? `(${props.todo.priority}) ` : '';
-  const displayCreationDate = () => props.todo.creationDate ? `${props.todo.creationDate} ` : '';
+  const displayCreationDate = () => props.todo.createdAt ? `${props.todo.createdAt} ` : '';
   const displayCompletionDate = () => props.todo.completionDate ? `${props.todo.completionDate} ` : '';
 
   return (
@@ -134,13 +135,14 @@ const TodoItem = (props: TodoItemProps) => {
           <p class={`text-gray-800 break-words ${props.todo.completed ? 'line-through' : ''}`}>
             {props.todo.description}
           </p>
-          {(props.todo.projects.length > 0 || props.todo.contexts.length > 0 || Object.keys(props.todo.metadata).length > 0) && (
+          {/* TODO: Solve this */}
+          {(props.todo.projectName === '' || props.todo.areaName === '' || Object.keys(props.todo.metadata ? props.todo.metadata : {}).length > 0) && (
             <div class="text-xs mt-1 text-gray-600 break-all">
-              {props.todo.projects.map(p => <span class="mr-1.5 text-purple-600 inline-block whitespace-nowrap">+{p}</span>)}
-              {props.todo.contexts.map(c => <span class="mr-1.5 text-teal-600 inline-block whitespace-nowrap">@{c}</span>)}
-              {Object.entries(props.todo.metadata).map(([key, value]) => (
+              <span class="mr-1.5 text-purple-600 inline-block whitespace-nowrap">+{props.todo.projectName}</span>
+              <span class="mr-1.5 text-purple-600 inline-block whitespace-nowrap">+{props.todo.areaName}</span>
+              {Object.entries(props.todo.metadata!).map(([key, value]) => (
                 <span class="mr-1.5 text-gray-500 inline-block whitespace-nowrap" title={`${key}: ${value}`}>
-                  {key}:{value.length > 10 ? value.substring(0, 10) + '...' : value}
+                  {key}:{value!.toString().length > 10 ? value!.toString().substring(0, 10) + '...' : value}
                 </span>
               ))}
             </div>
