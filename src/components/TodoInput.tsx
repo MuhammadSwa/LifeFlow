@@ -356,49 +356,67 @@ const TodoInput = (props: TodoInputProps) => {
     inputRef?.focus(); // Keep focus on input for next todo
   };
 
+
+  // <div class="mb-6">
+  //   <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-2">
+  //     <span class="inline-flex items-center"><kbd
+  //         class="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Tab</kbd><span class="ml-1">to
+  //         autocomplete</span></span>
+  //     <span class="inline-flex items-center"><kbd
+  //         class="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Enter</kbd><span class="ml-1">to add
+  //         task</span></span>
+  //     <span class="inline-flex items-center"><kbd
+  //         class="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">↑/↓</kbd><span class="ml-1">to navigate
+  //         suggestions</span></span>
+  //   </div>
+  // </div>
+
   // --- JSX ---
   return (
-    <div class="relative">
-      <textarea
-        ref={setupTextareaRef}
-        placeholder="Type ( for priority, @ for context, + for project, 'due:' for due date..."
-        value={inputValue()}
-        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-16" // Added pr-16 for Add button
-        onInput={handleInput}
-        onKeyDown={handleKeyDown}
-        onBlur={handleInputBlur}
-      />
+    <div class="mb-6">
+      <div class="relative">
+        <textarea
+          id="taskInput"
+          ref={setupTextareaRef}
+          placeholder="Type ( for priority, @ for context, + for project, 'due:' for due date..."
+          value={inputValue()}
+          class="w-full px-4 py-3 rounded-lg shadow-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all dark:bg-gray-800 dark:border-gray-700 dark:text-white focus-visible"
+          onInput={handleInput}
+          onKeyDown={handleKeyDown}
+          onBlur={handleInputBlur}
+        />
 
-      <button
-        type="button" // Important for forms if not submitting
-        class="absolute right-2 top-1/2 -translate-y-1/2 bg-green-500 text-white rounded-md px-3 py-1 text-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400"
-        onClick={handleSubmit}
-      >
-        Add
-      </button>
+        <button id="addTaskBtn"
+          type="button" // Important for forms if not submitting
+          onClick={handleSubmit}
+          class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus-visible">
+          Add
+        </button>
 
-      {/* Suggestion Dropdown: ensure it has 'suggestion-dropdown-class' if used in onBlur */}
-      <SuggestionDropdown
-        items={suggestionItems}
-        show={showSuggestions}
-        setShow={setShowSuggestions}
-        onSelect={handleSuggestionSelect}
-        inputRef={inputRef!} // Asserting inputRef is defined as dropdown is shown based on it
-        highlightedIndex={highlightedSuggestionIndex}
-        setHighlightedIndex={setHighlightedSuggestionIndex}
-        triggerCharPosition={popupPosition} // Use the unified popupPosition
-      // Add a class for onBlur detection, e.g., class="suggestion-dropdown-class"
-      />
 
-      {/* Time Picker Popup: ensure it has 'time-picker-popup-class' if used in onBlur */}
-      <TimePickerPopup
-        show={showDatePicker}
-        setShow={setShowDatePicker}
-        onSelectDate={handleDateSelect}
-        inputRef={inputRef!}
-        triggerCharPosition={popupPosition} // Use the unified popupPosition
-      // Add a class for onBlur detection, e.g., class="time-picker-popup-class"
-      />
+        {/* Suggestion Dropdown: ensure it has 'suggestion-dropdown-class' if used in onBlur */}
+        <SuggestionDropdown
+          items={suggestionItems}
+          show={showSuggestions}
+          setShow={setShowSuggestions}
+          onSelect={handleSuggestionSelect}
+          inputRef={inputRef!} // Asserting inputRef is defined as dropdown is shown based on it
+          highlightedIndex={highlightedSuggestionIndex}
+          setHighlightedIndex={setHighlightedSuggestionIndex}
+          triggerCharPosition={popupPosition} // Use the unified popupPosition
+        // Add a class for onBlur detection, e.g., class="suggestion-dropdown-class"
+        />
+
+        {/* Time Picker Popup: ensure it has 'time-picker-popup-class' if used in onBlur */}
+        <TimePickerPopup
+          show={showDatePicker}
+          setShow={setShowDatePicker}
+          onSelectDate={handleDateSelect}
+          inputRef={inputRef!}
+          triggerCharPosition={popupPosition} // Use the unified popupPosition
+        // Add a class for onBlur detection, e.g., class="time-picker-popup-class"
+        />
+      </div>
     </div>
   );
 };

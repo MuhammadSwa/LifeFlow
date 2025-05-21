@@ -9,6 +9,7 @@ import { createQuery } from '@rocicorp/zero/solid';
 import { useZero } from './ZeroContext';
 import { addTodo, loadTodos } from './stores/todoStore';
 import { FAB } from './components/FAB';
+import { Header } from './components/Header';
 
 
 
@@ -119,17 +120,24 @@ function App() {
 
 
   return (
-    <div class="p-4 min-h-screen max-w-2xl mx-auto pb-[88px] sm:pb-6"> {/* Increased max-width a bit */}
+    <div class="bg-gray-100 font-sans text-gray-800 transition-colors duration-300 dark:bg-gray-900 dark:text-gray-200 "> {/* Increased max-width a bit */}
+      <div class="container p-4 py-8 min-h-screen max-w-2xl mx-auto pb-[88px] sm:pb-6">
 
-      <TodoInput textAreaRef={el => todoInputTextAreaElement = el} />
-      {/**/}
-      <FilterControls />
-      {/**/}
-      <TodoStats />
-      {/**/}
-      <TodoList />
 
-      <FAB onClick={handleFabClick} />
+        <Header />
+
+        <TodoInput textAreaRef={el => todoInputTextAreaElement = el} />
+        {/**/}
+        <FilterControls />
+        {/**/}
+        <TodoStats />
+        {/**/}
+        <TodoList />
+
+        <FAB onClick={handleFabClick} />
+
+
+      </div>
 
 
     </div>

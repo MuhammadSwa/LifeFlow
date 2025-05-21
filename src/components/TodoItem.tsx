@@ -1,22 +1,9 @@
-
-// const handleClickOutside = (event: MouseEvent) => {
-//   if (!editInputRef?.contains(event.target as Node)) {
-//     setEditingTodoId(null);
-//   }
-// };
-//
-// createEffect(() => {
-//   document.addEventListener('click', handleClickOutside);
-//   onCleanup(() => document.removeEventListener('click', handleClickOutside));
-//   // Instead of global click, rely on blur or Escape, or selection.
-// });
-// a single todo item
-
 import { createEffect, createSignal, Show } from "solid-js";
 import { Todo } from "../../shared/schema";
 import { deleteTodo, saveEditedTodo, setEditingTodoId, store, toggleTodo } from "../stores/todoStore";
 import { useZero } from "../ZeroContext";
 import { formatUnixTime } from "../utils/date";
+import { Checkbox } from "./CheckBoxComponent";
 
 interface TodoItemProps {
   todo: Todo;
@@ -25,14 +12,13 @@ interface TodoItemProps {
 const TodoItem = (props: TodoItemProps) => {
   const z = useZero()
 
-  const [editText, setEditText] = createSignal('');
+  const [editText, setEditText] = createSignal(props.todo.rawText);
 
   let editInputRef: HTMLInputElement | undefined;
-  let todoItemRef: HTMLLIElement | undefined;
+  let todoItemRef: HTMLDivElement | undefined;
 
   // Check if the todo is currently being edited
   const isEditing = () => store.editingTodoId === props.todo.id;
-  // const isEditing = () => false;
 
   const handleEdit = () => {
     setEditText(props.todo.rawText); // Reset editText to current rawText when starting edit
@@ -73,31 +59,27 @@ const TodoItem = (props: TodoItemProps) => {
     }
   };
 
-
   // Helper to display parts of the todo
   const displayPriority = () => props.todo.priority ? `(${props.todo.priority}) ` : '';
-  // make it friendlier: show day name if the same week? use a library
   const displayCreationDate = () => props.todo.createdAt ? formatUnixTime(props.todo.createdAt) : '';
   const displayCompletionDate = () => props.todo.completionDate ? formatUnixTime(props.todo.completionDate) : '';
 
   return (
-    <li
+    <div
       ref={todoItemRef}
-      class={`p-3 rounded-md shadow-sm flex items-start gap-3 transition-colors border
-              ${props.todo.completed ? 'bg-gray-100 border-gray-200 opacity-70' : 'bg-white border-gray-300'}
-              ${isEditing() ? '!border-blue-500 ring-2 ring-blue-500' : 'hover:bg-gray-50'}`}
-    // ondblclick={!isEditing() ? handleEdit : undefined} // Optional: double click to edit
+      class={`bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden animate-fade-in ${props.todo.completed ? 'opacity-90' : ''
+        } ${isEditing() ? 'ring-2 ring-blue-500' : ''}`}
+      tabindex="0"
     >
       <Show
         when={!isEditing()}
         fallback={
           // --- Edit Mode ---
-          <div class="flex-grow flex flex-col gap-2">
-            {/* TODO: refactor TodoInput.tsx to be easily reused here */}
+          <div class="p-4 flex-grow flex flex-col gap-2">
             <input
               ref={editInputRef}
               type="text"
-              value={props.todo.rawText}
+              value={editText()}
               onInput={(e) => setEditText(e.currentTarget.value)}
               onKeyDown={handleKeyDown}
               class="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
@@ -106,13 +88,13 @@ const TodoItem = (props: TodoItemProps) => {
             <div class="flex gap-2 justify-end">
               <button
                 onClick={handleSave}
-                class="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                class="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
               >
                 Save
               </button>
               <button
                 onClick={handleCancel}
-                class="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                class="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
               >
                 Cancel
               </button>
@@ -120,60 +102,103 @@ const TodoItem = (props: TodoItemProps) => {
           </div>
         }
       >
-        {/* --- Display Mode --- */}
-        <input
-          type="checkbox"
-          class="mt-1 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer flex-shrink-0"
-          checked={props.todo.completed}
-          onChange={() => toggleTodo(z, props.todo.id)}
-          aria-label={`Mark todo as ${props.todo.completed ? 'incomplete' : 'complete'}`}
-        />
-        <div class="flex-grow min-w-0" onClick={handleEdit} role="button" title="Click to edit"> {/* Make text area clickable to edit */}
-          <div class="text-xs text-gray-500 break-all"> {/* `break-all` for long metadata strings */}
-            {props.todo.completed && displayCompletionDate() + ' | '}
-            {!props.todo.completed && displayPriority()}
-            {displayCreationDate()}
+        <div class="flex items-start p-4">
+          <div class="mr-3 pt-1">
+            <Checkbox checked={props.todo.completed} onChange={() => toggleTodo(z, props.todo.id)} />
           </div>
-          <p class={`text-gray-800 break-words ${props.todo.completed ? 'line-through' : ''}`}>
-            {props.todo.description}
-          </p>
-          {/* TODO: Solve this */}
 
-          <Show when={props.todo.areaName}>
-            <span class="mr-1.5 text-green-600 inline-block whitespace-nowrap">@{props.todo.areaName}</span>
-          </Show>
+          <div class="flex-grow">
+            <div class="flex flex-wrap gap-2 items-center mb-1">
+              {!props.todo.completed && displayPriority() &&
+                <span class="font-medium text-sm text-blue-600">{displayPriority()}</span>
+              }
 
-          <Show when={props.todo.projectName}>
-            <span class="mr-1.5 text-purple-600 inline-block whitespace-nowrap">+{props.todo.projectName}</span>
-          </Show>
-
-          <Show when={Object.keys(props.todo.metadata ? props.todo.metadata : {}).length > 0}>
-            {Object.entries(props.todo.metadata!).map(([key, value]) => (
-              <span class="mr-1.5 text-gray-500 inline-block whitespace-nowrap" title={`${key}: ${value}`}>
-                {key}:{value!.toString().length > 10 ? value!.toString().substring(0, 10) + '...' : value}
+              <span class={`font-medium ${props.todo.completed ? 'line-through text-gray-500' : ''}`}>
+                {props.todo.description}
               </span>
-            ))}
-          </Show>
 
-        </div>
-        <div class="flex flex-col items-center gap-1 ml-2 flex-shrink-0">
-          {/* <button
-            onClick={handleEdit}
-            class="text-blue-500 hover:text-blue-700 text-xs p-1"
-            aria-label="Edit todo"
-          >
-            Edit
-          </button> */}
-          <button
-            onClick={() => deleteTodo(z, props.todo.id)}
-            class="text-red-500 hover:text-red-700 font-semibold py-1 px-1 rounded text-xs"
-            aria-label={`Delete todo: ${props.todo.description}`}
-          >
-            Del
-          </button>
+              <Show when={props.todo.projectName}>
+                <span class="tag project-tag bg-indigo-100 text-indigo-800 text-xs px-2 py-0.5 rounded-full">
+                  +{props.todo.projectName}
+                </span>
+              </Show>
+
+              <Show when={props.todo.areaName}>
+                <span class="tag area-tag bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full">
+                  @{props.todo.areaName}
+                </span>
+              </Show>
+            </div>
+
+            <div class="flex justify-between items-center mt-2">
+              <div class="flex items-center gap-2 text-xs">
+                <div class="text-gray-500 dark:text-gray-400">
+                  <span class="inline-flex items-center">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    {displayCreationDate()}
+                  </span>
+                </div>
+
+                <Show when={props.todo.completed}>
+                  <div class="items-center text-xs text-green-500 dark:text-green-400 ">
+                    <span class="inline-flex items-center">
+                      <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M5 13l4 4L19 7"></path>
+                      </svg>
+                      {displayCompletionDate()}
+                    </span>
+                  </div>
+                </Show>
+              </div>
+
+
+              <Show when={Object.keys(props.todo.metadata || {}).length > 0}>
+                <div class="flex flex-wrap gap-1">
+                  {Object.entries(props.todo.metadata || {}).map(([key, value]) => (
+                    <span class="text-xs bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded" title={`${key}: ${value}`}>
+                      {key}:{value!.toString().length > 10 ? value!.toString().substring(0, 10) + '...' : value}
+                    </span>
+                  ))}
+                </div>
+              </Show>
+
+              <div class="flex gap-2">
+                <button
+                  onClick={handleEdit}
+                  class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full p-1 transition-colors"
+                  aria-label={`Edit todo: ${props.todo.description}`}
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                    </path>
+                  </svg>
+                </button>
+                <button
+                  class="text-red-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 rounded-full p-1 transition-colors"
+                  onClick={() => deleteTodo(z, props.todo.id)}
+                  aria-label={`Delete todo: ${props.todo.description}`}
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                    </path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </Show>
-    </li>
+    </div>
   );
 }
 

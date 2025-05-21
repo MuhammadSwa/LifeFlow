@@ -22,9 +22,10 @@ export const TodoStats: Component = () => {
 
   return (
     <Show when={allTodosCount() > 0}>
-      <div class="flex justify-between text-sm text-gray-500 mb-4 ">
-        <div>
-          <span>{totalFilteredCount()} {isFiltered() ? 'filtered' : 'total'} item{totalFilteredCount() !== 1 ? 's' : ''}</span>
+      <div class="flex justify-between items-center mb-4 px-2 text-sm">
+        <div class="text-sm text-gray-600 dark:text-gray-400">
+          <span><span class="font-medium">{totalFilteredCount()}</span>  {isFiltered() ? 'filtered' : 'total'} item{totalFilteredCount() !== 1 ? 's' : ''}</span>
+
 
           <Show when={isFiltered() && totalFilteredCount() !== allTodosCount()}>
             <span class="text-gray-400 ml-1">
@@ -35,8 +36,11 @@ export const TodoStats: Component = () => {
 
         <Show when={store.activeFilter.type === "ALL"}>
           <div class="flex gap-3">
-            <span>{activeCount()} active</span>
-            <span>{completedCount()} completed</span>
+
+            <div class="text-sm flex gap-3">
+              <span class="text-indigo-600 dark:text-indigo-400">{activeCount()} active</span>
+            </div>
+            <span class="text-gray-500">{completedCount()} completed</span>
           </div>
         </Show>
       </div>

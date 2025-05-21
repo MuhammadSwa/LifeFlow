@@ -8,7 +8,7 @@ const TodoList: Component = () => {
   const filteredTodos = useFilteredTodos();
 
   return (
-    <div >
+    <div>
 
       <div class="text-xs text-gray-500 mb-2">
         <Show when={store.selectedProject || store.selectedArea}>
@@ -27,17 +27,20 @@ const TodoList: Component = () => {
         </Show>
       </div>
 
+
+      {/* TODO: check if todos are loading and show loading state instead of showing this when todos=0 */}
       <Show
         when={filteredTodos().length > 0}
         fallback={<p class="text-center text-gray-500 italic py-4">No todos found with the current filters.</p>}
       >
 
-        <ul class="space-y-2">
+        <div class="space-y-2 mb-6">
           <For each={filteredTodos()}>
             {(item) => <TodoItem todo={item} />}
           </For>
-        </ul>
+        </div>
       </Show>
+
 
 
     </div>
